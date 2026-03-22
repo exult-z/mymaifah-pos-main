@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+
+@layer base {
+  :root {
+    --background: 30 30% 98%;
+    --foreground: 20 20% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 20 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 20% 15%;
+
+    --primary: 25 95% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 30 30% 94%;
+    --secondary-foreground: 20 20% 15%;
+
+    --muted: 30 20% 94%;
+    --muted-foreground: 20 10% 50%;
+
+    --accent: 25 90% 48%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --expense: 0 72% 51%;
+    --expense-foreground: 0 0% 100%;
+
+    --border: 30 20% 90%;
+    --input: 30 20% 90%;
+    --ring: 25 95% 53%;
+
+    --radius: 0.75rem;
+
+    --gradient-orange: linear-gradient(135deg, hsl(25, 95%, 53%), hsl(35, 95%, 55%));
+    --gradient-orange-dark: linear-gradient(135deg, hsl(20, 90%, 45%), hsl(25, 95%, 53%));
+    --gradient-red: linear-gradient(135deg, hsl(0, 72%, 51%), hsl(10, 80%, 55%));
+    --gradient-green: linear-gradient(135deg, hsl(142, 71%, 45%), hsl(152, 70%, 50%));
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Nunito', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+}
+
+@layer utilities {
+  .gradient-orange {
+    background: var(--gradient-orange);
+  }
+  .gradient-orange-dark {
+    background: var(--gradient-orange-dark);
+  }
+  .gradient-red {
+    background: var(--gradient-red);
+  }
+  .gradient-green {
+    background: var(--gradient-green);
+  }
+  .shadow-card {
+    box-shadow: 0 2px 12px -2px hsl(25 95% 53% / 0.1);
+  }
+  .shadow-float {
+    box-shadow: 0 8px 30px -8px hsl(25 95% 53% / 0.3);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
