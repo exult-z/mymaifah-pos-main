@@ -9,8 +9,18 @@ function createStore<T>(key: string, fallback: T) {
   let data: T = fallback;
   try {
     const stored = localStorage.getItem(key);
-    if (stored) data = JSON.parse(stored);
-  } catch {}
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        data = parsed;
+      } catch (e) {
+        console.error(`Failed to parse ${key} from localStorage:`, e);
+        data = fallback;
+      }
+    }
+  } catch (e) {
+    console.error(`Failed to read ${key} from localStorage:`, e);
+  }
 
   const listeners = new Set<Listener>();
 
@@ -23,8 +33,9 @@ function createStore<T>(key: string, fallback: T) {
     data = newData;
     try {
       localStorage.setItem(key, JSON.stringify(data));
-    } catch {}
-    // Notify all subscribers
+    } catch (e) {
+      console.error(`Failed to save ${key} to localStorage:`, e);
+    }
     listeners.forEach(l => l());
   }
 
@@ -59,6 +70,39 @@ export function useSales() {
   const todayRevenue = todaySales.reduce((sum, s) => sum + s.total, 0);
   const todayOrders = todaySales.length;
 
+  const getCashierPerformance = () => {
+    const cashierStats: Record<string, { name: string; sales: number; orders: number; items: number }> = {};
+    
+    sales.forEach(sale => {
+      if (sale.cashierName) {
+        if (!cashierStats[sale.cashierName]) {
+          cashierStats[sale.cashierName] = { name: sale.cashierName, sales: 0, orders: 0, items: 0 };
+        }
+        cashierStats[sale.cashierName].sales += sale.total;
+        cashierStats[sale.cashierName].orders += 1;
+        cashierStats[sale.cashierName].items += sale.items.reduce((sum, i) => sum + i.quantity, 0);
+      }
+    });
+    
+    return Object.values(cashierStats).sort((a, b) => b.sales - a.sales);
+  };
+
+  const getTodayCashierSales = () => {
+    const cashierStats: Record<string, { name: string; sales: number; orders: number }> = {};
+    
+    todaySales.forEach(sale => {
+      if (sale.cashierName) {
+        if (!cashierStats[sale.cashierName]) {
+          cashierStats[sale.cashierName] = { name: sale.cashierName, sales: 0, orders: 0 };
+        }
+        cashierStats[sale.cashierName].sales += sale.total;
+        cashierStats[sale.cashierName].orders += 1;
+      }
+    });
+    
+    return Object.values(cashierStats).sort((a, b) => b.sales - a.sales);
+  };
+
   const getBestSeller = () => {
     const itemCounts: Record<string, { name: string; count: number }> = {};
     todaySales.forEach(sale => {
@@ -86,7 +130,17 @@ export function useSales() {
     return days;
   };
 
-  return { sales, addSale, todaySales, todayRevenue, todayOrders, getBestSeller, getLast7DaysRevenue };
+  return { 
+    sales, 
+    addSale, 
+    todaySales, 
+    todayRevenue, 
+    todayOrders, 
+    getBestSeller, 
+    getLast7DaysRevenue,
+    getCashierPerformance,
+    getTodayCashierSales
+  };
 }
 
 export function useExpenses() {

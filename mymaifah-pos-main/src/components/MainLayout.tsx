@@ -1,20 +1,22 @@
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import BottomNav from './BottomNav';
 
 const MainLayout = () => {
   const { user, canAccess } = useAuth();
+  const location = useLocation();
 
-  // Check if user can access this section
-  // This should be enhanced to check the current route
+  // If user is cashier, redirect to POS only
   if (user && user.role === 'cashier') {
-    // Cashiers can only access POS - if they try to go elsewhere, redirect
-    const currentPath = window.location.pathname;
-    if (currentPath !== '/pos' && currentPath !== '/') {
+    const allowedPaths = ['/', '/pos', '/cashier-dashboard'];
+    const currentPath = location.pathname;
+    
+    if (!allowedPaths.includes(currentPath)) {
       return <Navigate to="/pos" replace />;
     }
   }
 
+  // If user is admin, allow all paths
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <Outlet />

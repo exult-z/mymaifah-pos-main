@@ -1,17 +1,5 @@
 import { useState, useEffect } from 'react';
-
-export interface Supply {
-  id: string;
-  name: string;
-  category: string;
-  quantity: number;
-  unit: string;
-  expiryDate: string;
-  daysUntilExpiry: number;
-  status: 'good' | 'warning' | 'expired';
-  addedBy: string;
-  addedAt: string;
-}
+import { Supply } from '@/data/supply';
 
 export function useSupplies() {
   const [supplies, setSupplies] = useState<Supply[]>(() => {
@@ -36,6 +24,7 @@ export function useSupplies() {
       });
       
       setSupplies(updated);
+      localStorage.setItem('supplies', JSON.stringify(updated));
     };
     
     updateExpiryStatus();
