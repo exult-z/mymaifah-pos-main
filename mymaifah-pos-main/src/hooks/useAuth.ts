@@ -1,64 +1,95 @@
-import { useState, useCallback, useSyncExternalStore } from 'react';
+import { useState, useEffect } from 'react';
+import { User, DEFAULT_ADMIN } from '@/types/user';
 
-export interface AppUser {
-  email: string;
-  fullName: string;
-  role: 'Cashier' | 'Manager' | 'Owner';
+interface AuthState {
+  user: User | null;
+  users: User[];
+  login: (email: string, password: string) => { success: boolean; user?: User; error?: string };
+  signup: (fullName: string, email: string, password: string, role: 'admin' | 'cashier') => { success: boolean; error?: string };
+  logout: () => void;
+  setUsers: (users: User[]) => void;
+  isAuthenticated: boolean;
+  canAccess: (requiredOperation: string) => boolean;
 }
 
-interface StoredUser extends AppUser {
-  password: string;
-}
+export function useAuth(): AuthState {
+  const [user, setUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>(() => {
+    const stored = localStorage.getItem('users');
+    if (stored) return JSON.parse(stored);
+    return [DEFAULT_ADMIN];
+  });
 
-type Listener = () => void;
+  useEffect(() => {
+    localStorage.setItem('users', JSON.stringify(users));
+  }, [users]);
 
-// In-memory user store
-const listeners = new Set<Listener>();
-let users: StoredUser[] = [
-  { email: 'admin@maifah.com', password: 'admin123', fullName: 'Admin', role: 'Owner' },
-];
-let currentUser: AppUser | null = null;
-
-function notify() {
-  listeners.forEach(l => l());
-}
-
-function subscribe(l: Listener) {
-  listeners.add(l);
-  return () => { listeners.delete(l); };
-}
-
-function getSnapshot() {
-  return currentUser;
-}
-
-export function useAuth() {
-  const user = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-
-  const login = useCallback((email: string, password: string): AppUser | null => {
-    const found = users.find(u => u.email === email && u.password === password);
-    if (!found) return null;
-    const { password: _, ...appUser } = found;
-    currentUser = appUser;
-    notify();
-    return appUser;
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  const register = useCallback((fullName: string, email: string, password: string, role: AppUser['role']): { success: boolean; error?: string } => {
-    if (users.find(u => u.email === email)) {
-      return { success: false, error: 'Email already exists' };
+  const login = (email: string, password: string) => {
+    const foundUser = users.find(
+      u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+    );
+    
+    if (!foundUser) {
+      return { success: false, error: 'Invalid email or password' };
     }
-    users.push({ email, password, fullName, role });
-    const appUser: AppUser = { email, fullName, role };
-    currentUser = appUser;
-    notify();
+    
+    setUser(foundUser);
+    localStorage.setItem('currentUser', JSON.stringify(foundUser));
+    return { success: true, user: foundUser };
+  };
+
+  const signup = (fullName: string, email: string, password: string, role: 'admin' | 'cashier') => {
+    const exists = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (exists) {
+      return { success: false, error: 'Email already registered' };
+    }
+    
+    const newUser: User = {
+      id: Date.now().toString(),
+      fullName,
+      email,
+      password,
+      role,
+      assignedOperation: null, // Will be set on first login
+      createdAt: new Date().toISOString(),
+    };
+    
+    setUsers([...users, newUser]);
     return { success: true };
-  }, []);
+  };
 
-  const logout = useCallback(() => {
-    currentUser = null;
-    notify();
-  }, []);
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('currentUser');
+  };
 
-  return { user, login, register, logout };
+  const canAccess = (requiredOperation: string): boolean => {
+    if (!user) return false;
+    
+    // Admin has full access
+    if (user.role === 'admin') return true;
+    
+    // Cashier can only access POS
+    if (user.role === 'cashier') {
+      return requiredOperation === 'cashier';
+    }
+    
+    return false;
+  };
+
+  return {
+    user,
+    users,
+    login,
+    signup,
+    logout,
+    setUsers,
+    isAuthenticated: !!user,
+    canAccess,
+  };
 }

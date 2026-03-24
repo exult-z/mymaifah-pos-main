@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { useSales, useExpenses } from '@/hooks/useStore';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
-import { TrendingUp, ShoppingBag, DollarSign, Star, FileText } from 'lucide-react';
+import { TrendingUp, ShoppingBag, DollarSign, Star, FileText, Package } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { generateDailyReport } from '@/lib/generateReport';
 import { toast } from 'sonner';
+import SuppliesManager from '../components/SuppliesManager';
 
 const DashboardPage = () => {
+  const [activeTab, setActiveTab] = useState<'sales' | 'expenses' | 'supplies'>('sales');
+  
   const { todayRevenue, todayOrders, getBestSeller, getLast7DaysRevenue, todaySales } = useSales();
   const { todayExpenseTotal, todayExpenses } = useExpenses();
   const chartData = getLast7DaysRevenue();
@@ -46,72 +50,144 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {[
-            { icon: DollarSign, label: 'Total Sales', value: `₱${todayRevenue.toLocaleString()}`, color: 'text-success' },
-            { icon: ShoppingBag, label: 'Orders Today', value: todayOrders.toString(), color: 'text-primary' },
-            { icon: TrendingUp, label: 'Revenue', value: `₱${todayRevenue.toLocaleString()}`, color: 'text-primary' },
-            { icon: Star, label: 'Best Seller', value: getBestSeller(), color: 'text-primary' },
-          ].map((stat, i) => (
-            <div key={i} className="bg-card rounded-2xl border border-border p-4 shadow-card">
-              <stat.icon className={`w-5 h-5 ${stat.color} mb-2`} />
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-              <p className="font-bold text-foreground text-sm truncate">{stat.value}</p>
-            </div>
-          ))}
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-4 bg-card rounded-2xl border border-border p-1">
+          <button
+            onClick={() => setActiveTab('sales')}
+            className={`flex-1 py-2 rounded-xl font-medium transition-all ${
+              activeTab === 'sales'
+                ? 'gradient-orange text-primary-foreground shadow-md'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Sales
+          </button>
+          <button
+            onClick={() => setActiveTab('expenses')}
+            className={`flex-1 py-2 rounded-xl font-medium transition-all ${
+              activeTab === 'expenses'
+                ? 'gradient-orange text-primary-foreground shadow-md'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Expenses
+          </button>
+          <button
+            onClick={() => setActiveTab('supplies')}
+            className={`flex-1 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-1 ${
+              activeTab === 'supplies'
+                ? 'gradient-orange text-primary-foreground shadow-md'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Package className="w-4 h-4" />
+            Supplies
+          </button>
         </div>
 
-        {/* 7-Day Chart */}
-        <div className="bg-card rounded-2xl border border-border p-4 shadow-card mb-4">
-          <h2 className="font-bold text-foreground mb-3">7-Day Revenue</h2>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={chartData}>
-              <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-              <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-              <Tooltip
-                contentStyle={{
-                  background: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                }}
-              />
-              <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Generate Report Button */}
-        <button
-          onClick={handleGenerateReport}
-          className="w-full gradient-orange text-primary-foreground font-bold py-3 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-card mb-4 active:scale-95 transition-transform"
-        >
-          <FileText className="w-5 h-5" />
-          Generate Daily Report
-        </button>
-
-        {/* Recent Sales */}
-        <div className="mb-4">
-          <h2 className="font-bold text-foreground mb-3">Recent Sales</h2>
-          {todaySales.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-4">No sales today</p>
-          ) : (
-            <div className="space-y-2">
-              {todaySales.slice(0, 10).map(sale => (
-                <div key={sale.id} className="bg-card rounded-xl border border-border p-3 shadow-card flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">
-                      {sale.items.map(i => i.name).join(', ').slice(0, 40)}...
-                    </p>
-                    <p className="text-xs text-muted-foreground capitalize">{sale.paymentMethod} • {new Date(sale.date).toLocaleTimeString()}</p>
-                  </div>
-                  <p className="font-bold text-primary">₱{sale.total.toLocaleString()}</p>
+        {/* Sales Tab Content */}
+        {activeTab === 'sales' && (
+          <>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {[
+                { icon: DollarSign, label: 'Total Sales', value: `₱${todayRevenue.toLocaleString()}`, color: 'text-success' },
+                { icon: ShoppingBag, label: 'Orders Today', value: todayOrders.toString(), color: 'text-primary' },
+                { icon: TrendingUp, label: 'Revenue', value: `₱${todayRevenue.toLocaleString()}`, color: 'text-primary' },
+                { icon: Star, label: 'Best Seller', value: getBestSeller(), color: 'text-primary' },
+              ].map((stat, i) => (
+                <div key={i} className="bg-card rounded-2xl border border-border p-4 shadow-card">
+                  <stat.icon className={`w-5 h-5 ${stat.color} mb-2`} />
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  <p className="font-bold text-foreground text-sm truncate">{stat.value}</p>
                 </div>
               ))}
             </div>
-          )}
-        </div>
+
+            {/* 7-Day Chart */}
+            <div className="bg-card rounded-2xl border border-border p-4 shadow-card mb-4">
+              <h2 className="font-bold text-foreground mb-3">7-Day Revenue</h2>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={chartData}>
+                  <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                    }}
+                  />
+                  <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Generate Report Button */}
+            <button
+              onClick={handleGenerateReport}
+              className="w-full gradient-orange text-primary-foreground font-bold py-3 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-card mb-4 active:scale-95 transition-transform"
+            >
+              <FileText className="w-5 h-5" />
+              Generate Daily Report
+            </button>
+
+            {/* Recent Sales */}
+            <div className="mb-4">
+              <h2 className="font-bold text-foreground mb-3">Recent Sales</h2>
+              {todaySales.length === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-4">No sales today</p>
+              ) : (
+                <div className="space-y-2">
+                  {todaySales.slice(0, 10).map(sale => (
+                    <div key={sale.id} className="bg-card rounded-xl border border-border p-3 shadow-card flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-foreground text-sm">
+                          {sale.items.map(i => i.name).join(', ').slice(0, 40)}...
+                        </p>
+                        <p className="text-xs text-muted-foreground capitalize">{sale.paymentMethod} • {new Date(sale.date).toLocaleTimeString()}</p>
+                      </div>
+                      <p className="font-bold text-primary">₱{sale.total.toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Expenses Tab Content */}
+        {activeTab === 'expenses' && (
+          <div className="bg-card rounded-2xl border border-border p-4 shadow-card mb-4">
+            <h2 className="font-bold text-foreground mb-3 flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-expense" />
+              Today's Expenses
+            </h2>
+            {todayExpenses.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-4">No expenses recorded today</p>
+            ) : (
+              <div className="space-y-2">
+                {todayExpenses.map((expense: any) => (
+                  <div key={expense.id} className="flex justify-between items-center border-b border-border pb-2">
+                    <div>
+                      <p className="font-medium text-foreground">{expense.name}</p>
+                      <p className="text-xs text-muted-foreground">{expense.category}</p>
+                    </div>
+                    <p className="font-bold text-expense">₱{expense.amount.toLocaleString()}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Supplies Tab Content */}
+        {activeTab === 'supplies' && (
+          <div className="mb-4">
+            <SuppliesManager />
+          </div>
+        )}
       </div>
 
       <BottomNav />
