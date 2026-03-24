@@ -1,13 +1,20 @@
 import { useSales, useExpenses } from '@/hooks/useStore';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
-import { TrendingUp, ShoppingBag, DollarSign, Star } from 'lucide-react';
+import { TrendingUp, ShoppingBag, DollarSign, Star, FileText } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
+import { generateDailyReport } from '@/lib/generateReport';
+import { toast } from 'sonner';
 
 const DashboardPage = () => {
   const { todayRevenue, todayOrders, getBestSeller, getLast7DaysRevenue, todaySales } = useSales();
-  const { todayExpenseTotal } = useExpenses();
+  const { todayExpenseTotal, todayExpenses } = useExpenses();
   const chartData = getLast7DaysRevenue();
   const netProfit = todayRevenue - todayExpenseTotal;
+
+  const handleGenerateReport = () => {
+    generateDailyReport(todaySales, todayExpenses, todayRevenue, todayExpenseTotal, getBestSeller());
+    toast.success('Report downloaded successfully');
+  };
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -74,6 +81,15 @@ const DashboardPage = () => {
             </BarChart>
           </ResponsiveContainer>
         </div>
+
+        {/* Generate Report Button */}
+        <button
+          onClick={handleGenerateReport}
+          className="w-full gradient-orange text-primary-foreground font-bold py-3 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-card mb-4 active:scale-95 transition-transform"
+        >
+          <FileText className="w-5 h-5" />
+          Generate Daily Report
+        </button>
 
         {/* Recent Sales */}
         <div className="mb-4">
