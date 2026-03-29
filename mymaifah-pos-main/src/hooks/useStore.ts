@@ -86,7 +86,35 @@ export function useSales() {
     return days;
   };
 
-  return { sales, addSale, todaySales, todayRevenue, todayOrders, getBestSeller, getLast7DaysRevenue };
+  // NEW FUNCTION: Get cashier performance for today
+  const getCashierPerformance = () => {
+    const cashierMap = new Map<string, { name: string; sales: number; orders: number; items: number }>();
+    
+    todaySales.forEach(sale => {
+      const cashierName = sale.cashierName || 'Unknown';
+      const current = cashierMap.get(cashierName) || { name: cashierName, sales: 0, orders: 0, items: 0 };
+      
+      current.sales += sale.total;
+      current.orders += 1;
+      current.items += sale.items.reduce((sum, item) => sum + item.quantity, 0);
+      
+      cashierMap.set(cashierName, current);
+    });
+    
+    // Return sorted by sales (highest first)
+    return Array.from(cashierMap.values()).sort((a, b) => b.sales - a.sales);
+  };
+
+  return { 
+    sales, 
+    addSale, 
+    todaySales, 
+    todayRevenue, 
+    todayOrders, 
+    getBestSeller, 
+    getLast7DaysRevenue,
+    getCashierPerformance  // ADDED THIS
+  };
 }
 
 export function useExpenses() {

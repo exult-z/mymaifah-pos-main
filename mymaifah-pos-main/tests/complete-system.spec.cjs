@@ -160,18 +160,38 @@ describe('Maifah POS System - Full UI Tests', function () {
     console.log('✅ Supplies tab is accessible and loads');
   });
 
+  // FIXED TEST 15 - Users tab with scroll and JavaScript click
   it('15. Users tab shows User Management', async function () {
     const tabs = await driver.findElements(By.css('button'));
+    let usersTab = null;
+    
     for (const tab of tabs) {
       const text = await tab.getText();
       if (text.includes('Users')) {
-        await tab.click();
+        usersTab = tab;
         break;
       }
     }
-    await sleep(2000);
-    const body = await driver.findElement(By.css('body')).getText();
-    assert.ok(body.includes('User Management') || body.includes('Admin User'), 'User Management not found');
+    
+    if (usersTab) {
+      // Scroll to the tab first
+      await driver.executeScript("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", usersTab);
+      await sleep(500);
+      
+      // Try JavaScript click if normal click fails
+      try {
+        await usersTab.click();
+      } catch (clickError) {
+        console.log('Normal click failed, using JavaScript click...');
+        await driver.executeScript("arguments[0].click();", usersTab);
+      }
+      
+      await sleep(2000);
+      const body = await driver.findElement(By.css('body')).getText();
+      assert.ok(body.includes('User Management') || body.includes('Admin User'), 'User Management not found');
+    } else {
+      assert.fail('Users tab not found');
+    }
     console.log('✅ Users tab shows User Management');
   });
 
