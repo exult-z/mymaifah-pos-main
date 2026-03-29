@@ -250,29 +250,32 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="flex gap-3 mb-6 overflow-x-auto pb-2 categories-scroll">
-            {[
-              { id: 'sales', label: 'Sales Analytics', icon: TrendingUp },
-              { id: 'expenses', label: 'Expenses', icon: DollarSign },
-              { id: 'supplies', label: 'Supplies', icon: Package },
-              { id: 'cashiers', label: 'Cashiers', icon: Users },
-              { id: 'users', label: 'Users', icon: UserCheck }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`px-5 py-2.5 rounded-xl font-medium whitespace-nowrap transition-all flex items-center gap-2 ${
-                  activeTab === tab.id
-                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
+         {/* Tab Navigation - FIXED: Full text visible */}
+<div className="flex gap-2 mb-6 overflow-x-auto pb-2 categories-scroll">
+  {[
+    { id: 'sales', label: 'Sales Analytics', icon: TrendingUp },
+    { id: 'expenses', label: 'Expenses', icon: DollarSign },
+    { id: 'supplies', label: 'Supplies', icon: Package },
+    { id: 'cashiers', label: 'Cashiers', icon: Users },
+    { id: 'users', label: 'Users', icon: UserCheck }
+  ].map(tab => (
+    <button
+      key={tab.id}
+      onClick={() => setActiveTab(tab.id as any)}
+      className={`px-3 py-2 rounded-xl font-medium transition-all flex items-center gap-1.5 ${
+        activeTab === tab.id
+          ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md'
+          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+      }`}
+      style={{ minWidth: 'fit-content' }}
+    >
+      <tab.icon className="w-3.5 h-3.5 flex-shrink-0" />
+      <span className="text-xs font-medium whitespace-nowrap">
+        {tab.label}
+      </span>
+    </button>
+  ))}
+</div>
 
           {/* Sales Tab */}
           {activeTab === 'sales' && (

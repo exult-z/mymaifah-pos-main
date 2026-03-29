@@ -1,11 +1,15 @@
+// src/assets/logo.tsx
 import React from 'react';
+import logo from './logo.png';
 
-export const Logo = () => (
-  <div className="w-28 h-28 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
-    <div className="text-center">
-      <div className="text-4xl mb-1">☕</div>
-      <div className="text-white font-bold text-xs">Maifah's</div>
-      <div className="text-white font-bold text-[10px]">Tea Cafe</div>
-    </div>
-  </div>
-);
+export const Logo: React.FC<{ className?: string }> = ({ className = "w-64 h-auto" }) => {
+  return (
+    <img 
+      src={logo} 
+      alt="MAIFAH Logo" 
+      className={className}
+    />
+  );
+};
+
+export default Logo;

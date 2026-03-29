@@ -13,13 +13,17 @@ const SplashScreen = () => {
         transition={{ duration: 0.5 }}
         className="flex flex-col items-center gap-6 text-center"
       >
+        {/* NEW LOGO IMAGE - replaces the old ugly logo */}
         <Logo />
+        
+        {/* THE TEXT STAYS HERE - just like before */}
         <div>
           <h1 className="text-3xl font-black text-primary-foreground leading-tight">
             Maifah Tea Bong's Cafe
           </h1>
           <p className="text-lg font-semibold text-primary-foreground/80 mt-1">POS System</p>
         </div>
+        
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => navigate('/login')}
