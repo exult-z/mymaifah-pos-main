@@ -1,0 +1,344 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 30% 98%;
+    --foreground: 20 20% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 20 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 20% 15%;
+
+    --primary: 25 95% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 30 30% 94%;
+    --secondary-foreground: 20 20% 15%;
+
+    --muted: 30 20% 94%;
+    --muted-foreground: 20 10% 50%;
+
+    --accent: 25 90% 48%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --expense: 0 72% 51%;
+    --expense-foreground: 0 0% 100%;
+
+    --border: 30 20% 90%;
+    --input: 30 20% 90%;
+    --ring: 25 95% 53%;
+
+    --radius: 0.75rem;
+
+    --gradient-orange: linear-gradient(135deg, hsl(25, 95%, 53%), hsl(35, 95%, 55%));
+    --gradient-orange-dark: linear-gradient(135deg, hsl(20, 90%, 45%), hsl(25, 95%, 53%));
+    --gradient-red: linear-gradient(135deg, hsl(0, 72%, 51%), hsl(10, 80%, 55%));
+    --gradient-green: linear-gradient(135deg, hsl(142, 71%, 45%), hsl(152, 70%, 50%));
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  /* Dark mode support */
+  .dark {
+    --background: 20 20% 10%;
+    --foreground: 30 30% 98%;
+    --card: 20 20% 12%;
+    --card-foreground: 30 30% 98%;
+    --popover: 20 20% 12%;
+    --popover-foreground: 30 30% 98%;
+    --secondary: 20 20% 15%;
+    --secondary-foreground: 30 30% 98%;
+    --muted: 20 20% 15%;
+    --muted-foreground: 30 10% 60%;
+    --border: 20 20% 20%;
+    --input: 20 20% 20%;
+    --gradient-orange: linear-gradient(135deg, hsl(25, 85%, 45%), hsl(35, 85%, 48%));
+    --gradient-orange-dark: linear-gradient(135deg, hsl(20, 80%, 38%), hsl(25, 85%, 42%));
+    --gradient-red: linear-gradient(135deg, hsl(0, 62%, 44%), hsl(10, 70%, 48%));
+    --gradient-green: linear-gradient(135deg, hsl(142, 61%, 38%), hsl(152, 60%, 43%));
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Nunito', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  #root {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* Better scrolling experience */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar - ALWAYS VISIBLE */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background-color: hsl(var(--secondary));
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--secondary));
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary));
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.8);
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary)) hsl(var(--secondary));
+  }
+
+  /* Ensure all scrollable containers show scrollbars */
+  .overflow-auto, 
+  .overflow-y-auto, 
+  .overflow-x-auto,
+  .flex-1,
+  .min-h-screen {
+    scrollbar-width: thin !important;
+  }
+  
+  .overflow-auto::-webkit-scrollbar, 
+  .overflow-y-auto::-webkit-scrollbar, 
+  .overflow-x-auto::-webkit-scrollbar {
+    display: block !important;
+    width: 8px !important;
+    height: 8px !important;
+  }
+  
+  /* Ensure categories are scrollable horizontally */
+  .categories-scroll {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  
+  .categories-scroll::-webkit-scrollbar {
+    height: 4px;
+    display: block !important;
+  }
+  
+  .categories-scroll::-webkit-scrollbar-track {
+    background: hsl(var(--secondary));
+    border-radius: 10px;
+  }
+  
+  .categories-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary));
+    border-radius: 10px;
+  }
+}
+
+@layer utilities {
+  .gradient-orange {
+    background: var(--gradient-orange);
+  }
+  .gradient-orange-dark {
+    background: var(--gradient-orange-dark);
+  }
+  .gradient-red {
+    background: var(--gradient-red);
+  }
+  .gradient-green {
+    background: var(--gradient-green);
+  }
+  .shadow-card {
+    box-shadow: 0 2px 12px -2px hsl(25 95% 53% / 0.1);
+  }
+  .shadow-float {
+    box-shadow: 0 8px 30px -8px hsl(25 95% 53% / 0.3);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  /* Additional utility classes */
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+  
+  /* Scrollable container */
+  .scrollable-container {
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+  }
+}
+
+/* Print styles for receipt */
+@media print {
+  body, #root {
+    margin: 0;
+    padding: 0;
+    background: white !important;
+    overflow-y: visible !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  #receipt-content {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    width: 80mm !important;
+    padding: 4mm !important;
+    margin: 0 auto !important;
+  }
+  nav, .bottom-nav, header, .fixed {
+    display: none !important;
+  }
+}
+
+/* Image loading animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.image-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Ensure images don't overflow */
+img {
+  max-width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Line clamp for text */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode card shadows */
+.dark .shadow-card {
+  box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.3);
+}
+
+.dark .shadow-float {
+  box-shadow: 0 8px 30px -8px rgba(0, 0, 0, 0.5);
+}
+
+/* Dark mode gradient backgrounds */
+.dark .gradient-orange {
+  background: var(--gradient-orange);
+}
+
+.dark .gradient-orange-dark {
+  background: var(--gradient-orange-dark);
+}
+
+.dark .gradient-red {
+  background: var(--gradient-red);
+}
+
+.dark .gradient-green {
+  background: var(--gradient-green);
+}
