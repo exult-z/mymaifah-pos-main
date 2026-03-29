@@ -1,3 +1,32 @@
+import ChickenPastil from '@/assets/menu/sulit-meals/ChickenPastil.jfif';
+import PorkSisig from '@/assets/menu/sulit-meals/PorkSisig.jfif';
+import Pares from '@/assets/menu/sulit-meals/Pares.jfif';
+import ParesOverload from '@/assets/menu/sulit-meals/ParesOverload.jfif';
+import TJHotdog from '@/assets/menu/sulit-meals/TJHotdog.jfif';
+import Ham from '@/assets/menu/sulit-meals/Ham.jfif';
+import Giniling from '@/assets/menu/sulit-meals/Giniling.jfif';
+import Longganisa from '@/assets/menu/silog-meals/Longganisa.jfif';
+import LechonKawali from '@/assets/menu/silog-meals/LechonKawali.jfif';
+import PorkLiempo from '@/assets/menu/silog-meals/PorkLiempo.jfif';
+import Ham1 from '@/assets/menu/silog-meals/Ham1.jfif';
+import Embotido from '@/assets/menu/silog-meals/Embotido.jfif';
+import Tofu from '@/assets/menu/silog-meals/Tofu.jfif';
+import Tapa from '@/assets/menu/silog-meals/Tapa.jfif';
+import BurgerSteak from '@/assets/menu/silog-meals/BurgerSteak.jfif';
+import Bacon from '@/assets/menu/silog-meals/Bacon.jfif';
+import Cordon from '@/assets/menu/silog-meals/Cordon.jfif';
+import ChikFing from '@/assets/menu/silog-meals/ChikFing.jfif';
+import ChikChop from '@/assets/menu/silog-meals/ChikChop.jfif';
+import ChikNug from '@/assets/menu/silog-meals/ChikNug.jfif';
+import Tocino from '@/assets/menu/silog-meals/Tocino.jfif';
+import Sisig from '@/assets/menu/silog-meals/Sisig.jfif';
+import Hung from '@/assets/menu/silog-meals/Hung.jfif';
+import skinless from '@/assets/menu/silog-meals/skinless.jfif';
+import Luncheon from '@/assets/menu/silog-meals/Luncheon.jfif';
+import Bangsi from '@/assets/menu/silog-meals/Bangsi.jfif';
+
+
+
 export interface MenuImage {
   id: string;
   name: string;
@@ -11,188 +40,213 @@ export interface MenuImage {
 export const menuImages: Record<string, MenuImage> = {
   // Sulit Meals
   'sm1': { 
-    id: 'sm1', 
-    name: 'Chicken Pastil', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2016/03/05/19/02/chicken-1238279_640.jpg', 
-    fallbackColor: '#FF6B35', 
-    emoji: '🍗' 
-  },
+  id: 'sm1', 
+  name: 'Chicken Pastil', 
+  imageUrl: ChickenPastil,          
+  fallbackColor: '#FF6B35', 
+  emoji: '🍗',
+  localImage: ChickenPastil         
+},
   'sm2': { 
     id: 'sm2', 
     name: 'Pork Sisig', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2017/05/07/08/56/pork-2291760_640.jpg', 
+    imageUrl: PorkSisig, 
     fallbackColor: '#FF8C42', 
-    emoji: '🐷' 
+    emoji: '🐷', 
+    localImage: PorkSisig
   },
   'sm3': { 
     id: 'sm3', 
     name: '60 Pesos Pares', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2014/10/19/20/59/beef-493343_640.jpg', 
+    imageUrl: Pares, 
     fallbackColor: '#FFA559', 
-    emoji: '🍲' 
+    emoji: '🍲', 
+    localImage: Pares
   },
   'sm4': { 
     id: 'sm4', 
     name: '100 Pesos Overload Pares', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2014/10/19/20/59/beef-493343_640.jpg', 
+    imageUrl: ParesOverload, 
     fallbackColor: '#FFB347', 
-    emoji: '🍖' 
+    emoji: '🍖',
+    localImage: ParesOverload
   },
   'sm5': { 
     id: 'sm5', 
     name: 'Tender Juicy Hotdog', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2016/03/05/19/02/hot-dog-1238278_640.jpg', 
+    imageUrl: TJHotdog, 
     fallbackColor: '#FF6B6B', 
-    emoji: '🌭' 
+    emoji: '🌭', 
+    localImage: TJHotdog
   },
   'sm6': { 
     id: 'sm6', 
     name: 'Sweet Ham', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2016/06/08/10/56/ham-1445013_640.jpg', 
+    imageUrl: Ham, 
     fallbackColor: '#FF8A8A', 
-    emoji: '🍖' 
+    emoji: '🍖', 
+    localImage: Ham
   },
   'sm7': { 
     id: 'sm7', 
     name: 'Giniling Express', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2020/06/24/16/10/ground-beef-5337197_640.jpg', 
+    imageUrl: Giniling, 
     fallbackColor: '#FFA07A', 
-    emoji: '🍛' 
+    emoji: '🍛', 
+    localImage: Giniling
   },
 
   // Silog Meals
   'sl1': { 
     id: 'sl1', 
-    name: 'Longganisa', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2016/05/12/18/14/sausages-1388526_640.jpg', 
+    name: 'Longganisa Silog', 
+    imageUrl: skinless, 
     fallbackColor: '#D4A5A5', 
-    emoji: '🌭' 
+    emoji: '🌭', 
+    localImage: skinless
   },
   'sl2': { 
     id: 'sl2', 
-    name: 'Lechon Kawali', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2017/05/07/08/56/pork-2291760_640.jpg', 
+    name: 'Lechon Kawali Silog', 
+    imageUrl: LechonKawali, 
     fallbackColor: '#C41E3A', 
-    emoji: '🐷' 
+    emoji: '🐷', 
+    localImage: LechonKawali
   },
   'sl3': { 
     id: 'sl3', 
-    name: 'Pork Liempo', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2017/05/07/08/56/pork-2291760_640.jpg', 
+    name: 'Pork Liempo Silog', 
+    imageUrl: PorkLiempo, 
     fallbackColor: '#DC143C', 
-    emoji: '🥩' 
+    emoji: '🥩', 
+    localImage: PorkLiempo
   },
   'sl4': { 
     id: 'sl4', 
-    name: 'Sweet Ham (1 pc)', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2016/06/08/10/56/ham-1445013_640.jpg', 
+    name: 'Sweet Ham (1 pc) Silog', 
+    imageUrl: Ham1, 
     fallbackColor: '#FFB6C1', 
-    emoji: '🍖' 
+    emoji: '🍖', 
+    localImage: Ham1
   },
   'sl5': { 
     id: 'sl5', 
-    name: 'Embotido', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2020/05/06/15/05/meatloaf-5137220_640.jpg', 
+    name: 'Embotido Silog', 
+    imageUrl: Embotido, 
     fallbackColor: '#CD5C5C', 
     emoji: '🥫' 
   },
   'sl6': { 
     id: 'sl6', 
     name: 'Sizzling Tofu', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2018/03/21/21/00/tofu-3248369_640.jpg', 
+    imageUrl: Tofu, 
     fallbackColor: '#DEB887', 
-    emoji: '🥟' 
+    emoji: '🥟', 
+    localImage: Tofu
   },
   'sl7': { 
     id: 'sl7', 
     name: 'Beef Tapa', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2018/12/05/19/27/steak-3857885_640.jpg', 
+    imageUrl: Tapa, 
     fallbackColor: '#8B4513', 
-    emoji: '🥩' 
+    emoji: '🥩', 
+    localImage: Tapa
   },
   'sl8': { 
     id: 'sl8', 
     name: 'Burger Steak', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2014/10/23/18/05/burger-499276_640.jpg', 
+    imageUrl: BurgerSteak, 
     fallbackColor: '#BC8F6B', 
-    emoji: '🍔' 
+    emoji: '🍔', 
+    localImage: BurgerSteak
   },
   'sl9': { 
     id: 'sl9', 
     name: 'Honey Bacon', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2016/08/13/22/05/bacon-1591312_640.jpg', 
+    imageUrl: Bacon, 
     fallbackColor: '#D2691E', 
-    emoji: '🥓' 
+    emoji: '🥓', 
+    localImage: Bacon
   },
   'sl10': { 
     id: 'sl10', 
     name: 'Cordon Bleu', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2016/03/05/19/02/chicken-1238279_640.jpg', 
+    imageUrl: Cordon, 
     fallbackColor: '#F4A460', 
-    emoji: '🍗' 
+    emoji: '🍗', 
+    localImage: Cordon
   },
   'sl11': { 
     id: 'sl11', 
     name: 'Chicken Fingers (3)', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2017/06/07/10/44/chicken-2380298_640.jpg', 
+    imageUrl: ChikFing, 
     fallbackColor: '#FFD700', 
-    emoji: '🍗' 
+    emoji: '🍗', 
+    localImage: ChikFing
   },
   'sl12': { 
     id: 'sl12', 
     name: 'Chicken Chop', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2016/03/05/19/02/chicken-1238279_640.jpg', 
+    imageUrl: ChikChop, 
     fallbackColor: '#F0E68C', 
-    emoji: '🍗' 
+    emoji: '🍗', 
+    localImage: ChikChop
   },
   'sl13': { 
     id: 'sl13', 
     name: 'Chicken Nuggets (4)', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2017/06/07/10/44/chicken-2380298_640.jpg', 
+    imageUrl: ChikNug, 
     fallbackColor: '#FFE4B5', 
-    emoji: '🍗' 
+    emoji: '🍗', 
+    localImage: ChikNug
   },
   'sl14': { 
     id: 'sl14', 
     name: 'Tocino (Pork/Chicken)', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2016/03/05/19/02/chicken-1238279_640.jpg', 
+    imageUrl: Tocino, 
     fallbackColor: '#FF69B4', 
-    emoji: '🥩' 
+    emoji: '🥩', 
+    localImage: Tocino
   },
   'sl15': { 
     id: 'sl15', 
     name: 'Sisig (Pork/Chicken)', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2017/05/07/08/56/pork-2291760_640.jpg', 
+    imageUrl: Sisig, 
     fallbackColor: '#FF4500', 
-    emoji: '🐷' 
+    emoji: '🐷', 
+    localImage: Sisig
   },
   'sl16': { 
     id: 'sl16', 
     name: 'Hungarian Sausage', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2016/05/12/18/14/sausages-1388526_640.jpg', 
+    imageUrl: Hung, 
     fallbackColor: '#DC143C', 
-    emoji: '🌭' 
+    emoji: '🌭',
+    localImage: Hung
   },
   'sl17': { 
     id: 'sl17', 
     name: 'Skinless Longganisa', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2016/05/12/18/14/sausages-1388526_640.jpg', 
+    imageUrl: Longganisa, 
     fallbackColor: '#F08080', 
-    emoji: '🌭' 
+    emoji: '🌭', 
+    localImage: Longganisa
   },
   'sl18': { 
     id: 'sl18', 
     name: 'Luncheon Meat', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2014/10/23/18/05/burger-499276_640.jpg', 
+    imageUrl: Luncheon, 
     fallbackColor: '#E9967A', 
-    emoji: '🥫' 
+    emoji: '🥫', 
+    localImage: Luncheon
   },
   'sl19': { 
     id: 'sl19', 
     name: 'Boneless Bangus', 
-    imageUrl: 'https://cdn.pixabay.com/photo/2017/07/13/18/29/fish-2500895_640.jpg', 
+    imageUrl: Bangsi, 
     fallbackColor: '#48D1CC', 
-    emoji: '🐟' 
+    emoji: '🐟', 
+    localImage: Bangsi
   },
 
   // Rice Toppings
