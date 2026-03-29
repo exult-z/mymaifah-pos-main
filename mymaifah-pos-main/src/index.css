@@ -6,75 +6,51 @@
 
 @layer base {
   :root {
-    --background: 30 30% 98%;
-    --foreground: 20 20% 15%;
-
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
-    --card-foreground: 20 20% 15%;
-
+    --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 20 20% 15%;
-
+    --popover-foreground: 222.2 84% 4.9%;
     --primary: 25 95% 53%;
     --primary-foreground: 0 0% 100%;
-
-    --secondary: 30 30% 94%;
-    --secondary-foreground: 20 20% 15%;
-
-    --muted: 30 20% 94%;
-    --muted-foreground: 20 10% 50%;
-
-    --accent: 25 90% 48%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
-
     --expense: 0 72% 51%;
     --expense-foreground: 0 0% 100%;
-
-    --border: 30 20% 90%;
-    --input: 30 20% 90%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
     --ring: 25 95% 53%;
-
     --radius: 0.75rem;
-
     --gradient-orange: linear-gradient(135deg, hsl(25, 95%, 53%), hsl(35, 95%, 55%));
     --gradient-orange-dark: linear-gradient(135deg, hsl(20, 90%, 45%), hsl(25, 95%, 53%));
     --gradient-red: linear-gradient(135deg, hsl(0, 72%, 51%), hsl(10, 80%, 55%));
     --gradient-green: linear-gradient(135deg, hsl(142, 71%, 45%), hsl(152, 70%, 50%));
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  /* Dark mode support */
   .dark {
-    --background: 20 20% 10%;
-    --foreground: 30 30% 98%;
-    --card: 20 20% 12%;
-    --card-foreground: 30 30% 98%;
-    --popover: 20 20% 12%;
-    --popover-foreground: 30 30% 98%;
-    --secondary: 20 20% 15%;
-    --secondary-foreground: 30 30% 98%;
-    --muted: 20 20% 15%;
-    --muted-foreground: 30 10% 60%;
-    --border: 20 20% 20%;
-    --input: 20 20% 20%;
-    --gradient-orange: linear-gradient(135deg, hsl(25, 85%, 45%), hsl(35, 85%, 48%));
-    --gradient-orange-dark: linear-gradient(135deg, hsl(20, 80%, 38%), hsl(25, 85%, 42%));
-    --gradient-red: linear-gradient(135deg, hsl(0, 62%, 44%), hsl(10, 70%, 48%));
-    --gradient-green: linear-gradient(135deg, hsl(142, 61%, 38%), hsl(152, 60%, 43%));
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
   }
 }
 
@@ -131,47 +107,6 @@
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--primary)) hsl(var(--secondary));
   }
-
-  /* Ensure all scrollable containers show scrollbars */
-  .overflow-auto, 
-  .overflow-y-auto, 
-  .overflow-x-auto,
-  .flex-1,
-  .min-h-screen {
-    scrollbar-width: thin !important;
-  }
-  
-  .overflow-auto::-webkit-scrollbar, 
-  .overflow-y-auto::-webkit-scrollbar, 
-  .overflow-x-auto::-webkit-scrollbar {
-    display: block !important;
-    width: 8px !important;
-    height: 8px !important;
-  }
-  
-  /* Ensure categories are scrollable horizontally */
-  .categories-scroll {
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    white-space: nowrap !important;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-  }
-  
-  .categories-scroll::-webkit-scrollbar {
-    height: 4px;
-    display: block !important;
-  }
-  
-  .categories-scroll::-webkit-scrollbar-track {
-    background: hsl(var(--secondary));
-    border-radius: 10px;
-  }
-  
-  .categories-scroll::-webkit-scrollbar-thumb {
-    background: hsl(var(--primary));
-    border-radius: 10px;
-  }
 }
 
 @layer utilities {
@@ -197,7 +132,6 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   
-  /* Additional utility classes */
   .text-balance {
     text-wrap: balance;
   }
@@ -212,7 +146,6 @@
     animation-delay: 300ms;
   }
   
-  /* Scrollable container */
   .scrollable-container {
     overflow-y: auto;
     max-height: calc(100vh - 200px);
@@ -280,7 +213,7 @@ img {
   object-fit: cover;
 }
 
-/* Line clamp for text */
+/* Line clamp for text - standard property */
 .line-clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -341,4 +274,281 @@ img {
 
 .dark .gradient-green {
   background: var(--gradient-green);
+}
+
+/* ============================================ */
+/* RESPONSIVE FIXES FOR POS PAGE */
+/* ============================================ */
+
+/* Responsive fixes for POS page */
+@media (max-width: 640px) {
+  .grid-cols-2 {
+    gap: 0.75rem;
+  }
+  
+  .px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .text-xl {
+    font-size: 1.125rem;
+  }
+}
+
+/* Ensure proper spacing on different screen heights */
+@media (max-height: 700px) {
+  .pb-24 {
+    padding-bottom: 5rem;
+  }
+  
+  .max-h-\[85vh\] {
+    max-height: 90vh;
+  }
+  
+  .max-h-\[50vh\] {
+    max-height: 45vh;
+  }
+}
+
+/* Fix for very small screens */
+@media (max-width: 380px) {
+  .grid-cols-2 {
+    gap: 0.5rem;
+  }
+  
+  .p-3 {
+    padding: 0.75rem;
+  }
+  
+  .text-sm {
+    font-size: 0.75rem;
+  }
+}
+
+/* Ensure floating button is always accessible */
+.fixed.bottom-24 {
+  bottom: 5rem;
+}
+
+/* Make categories scroll smoothly */
+.overflow-x-auto {
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Improve touch targets for mobile */
+button, 
+[role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@media (max-width: 640px) {
+  button,
+  [role="button"] {
+    min-height: 40px;
+    min-width: 40px;
+  }
+}
+
+/* Cart drawer improvements */
+.cart-drawer-content {
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.cart-items-container {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 50vh;
+}
+
+.cart-footer {
+  flex-shrink: 0;
+  border-top: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  border-radius: 0 0 1.5rem 1.5rem;
+}
+
+/* Sticky header improvements */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: hsl(var(--background));
+}
+
+/* Category button improvements */
+.category-button {
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.category-button-active {
+  background: var(--gradient-orange);
+  color: white;
+  box-shadow: 0 2px 12px -2px hsl(25 95% 53% / 0.2);
+}
+
+/* Menu card improvements */
+.menu-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.menu-card:active {
+  transform: scale(0.98);
+}
+
+/* Price badge styling */
+.price-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+/* Quantity badge animation */
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.quantity-badge {
+  animation: bounce 0.3s ease;
+}
+
+/* Loading state */
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid hsl(var(--primary) / 0.2);
+  border-top-color: hsl(var(--primary));
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Empty state styling */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+.empty-state-icon {
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1rem;
+  color: hsl(var(--muted-foreground));
+  opacity: 0.5;
+}
+
+/* Toast customization */
+.toast-success {
+  background: hsl(var(--success));
+  color: white;
+}
+
+.toast-error {
+  background: hsl(var(--destructive));
+  color: white;
+}
+
+.toast-info {
+  background: hsl(var(--primary));
+  color: white;
+}
+
+/* Add to the end of your index.css file */
+
+/* Better spacing for POS grid */
+@media (min-width: 640px) {
+  .grid-cols-2 {
+    gap: 1rem;
+  }
+}
+
+/* Dashboard tab improvements */
+.dashboard-tabs {
+  scrollbar-width: thin;
+  padding-bottom: 0.5rem;
+}
+
+.dashboard-tabs::-webkit-scrollbar {
+  height: 3px;
+}
+
+/* Menu card improvements */
+.menu-card {
+  transition: all 0.2s ease;
+}
+
+.menu-card:active {
+  transform: scale(0.97);
+}
+
+/* Better spacing for dashboard summary cards */
+.summary-card {
+  transition: all 0.2s ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Responsive adjustments for dashboard */
+@media (max-width: 640px) {
+  .dashboard-tab-button {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-size: 0.75rem;
+  }
+  
+  .summary-card {
+    padding: 0.75rem;
+  }
+}
+
+
+/* Add these styles at the end of your index.css */
+
+/* Better spacing for grid items */
+.grid-cols-2 {
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .grid-cols-2 {
+    gap: 1.25rem;
+  }
+}
+
+/* Better card styling */
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+
+/* Better button spacing */
+button, [role="button"] {
+  cursor: pointer;
+}
+
+/* Scrollbar for supplies list */
+.max-h-96 {
+  max-height: 24rem;
+}
+
+/* Progress bar animation */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
 }

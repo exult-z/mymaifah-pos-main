@@ -5,15 +5,25 @@ import { Logo } from '@/assets/logo';
 import { toast } from 'sonner';
 import { User, ArrowLeft, AlertCircle, LogIn } from 'lucide-react';
 
+// Email validation regex
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState({ email: false, password: false });
   const navigate = useNavigate();
   const { login, user, isAuthenticated, isLoading } = useAuth();
 
-  // Use useEffect for redirect, not during render
+  // Validation
+  const isEmailValid = email.trim() === '' || emailRegex.test(email);
+  const isPasswordValid = password.trim() === '' || password.length >= 6;
+  
+  const canSubmit = email.trim() !== '' && password.trim() !== '' && isEmailValid && isPasswordValid;
+
+  // Redirect if already logged in
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
       if (user.role === 'admin') {
@@ -25,15 +35,24 @@ const LoginPage = () => {
   }, [isLoading, isAuthenticated, user, navigate]);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setError('Please fill in all fields');
+    // Clear previous error
+    setError('');
+    
+    // Validate email format
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
+    // Validate password length
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
       return;
     }
     
     setLoading(true);
-    setError('');
     
-    const result = login(email, password);
+    const result = await login(email, password);
     
     if (result.success && result.user) {
       toast.success(`Welcome back, ${result.user.fullName}!`);
@@ -46,6 +65,7 @@ const LoginPage = () => {
   };
 
   const fillDemoCredentials = (type: 'admin' | 'cashier') => {
+    setTouched({ email: true, password: true });
     if (type === 'admin') {
       setEmail('admin@maifah.com');
       setPassword('admin123');
@@ -56,6 +76,13 @@ const LoginPage = () => {
     setError('');
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && canSubmit && !loading) {
+      handleLogin();
+    }
+  };
+
+  // Show loading while checking auth
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -82,32 +109,55 @@ const LoginPage = () => {
 
         {error && (
           <div className="w-full p-3 rounded-xl bg-destructive/10 text-destructive text-sm font-medium text-center flex items-center gap-2 justify-center">
-            <AlertCircle className="w-4 h-4" />
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
           </div>
         )}
 
         <div className="w-full flex flex-col gap-3">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => { setEmail(e.target.value); setError(''); }}
-            className="w-full px-4 py-3 rounded-xl border border-input bg-card text-foreground text-sm font-medium outline-none focus:ring-2 focus:ring-ring"
-            disabled={loading}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => { setPassword(e.target.value); setError(''); }}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            className="w-full px-4 py-3 rounded-xl border border-input bg-card text-foreground text-sm font-medium outline-none focus:ring-2 focus:ring-ring"
-            disabled={loading}
-          />
+          <div>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={e => { setEmail(e.target.value); setError(''); }}
+              onBlur={() => setTouched({ ...touched, email: true })}
+              onKeyDown={handleKeyPress}
+              className={`w-full px-4 py-3 rounded-xl border ${
+                touched.email && !isEmailValid && email !== ''
+                  ? 'border-destructive'
+                  : 'border-input'
+              } bg-card text-foreground text-sm font-medium outline-none focus:ring-2 focus:ring-ring`}
+              disabled={loading}
+            />
+            {touched.email && !isEmailValid && email !== '' && (
+              <p className="text-xs text-destructive mt-1">Please enter a valid email address</p>
+            )}
+          </div>
+          
+          <div>
+            <input
+              type="password"
+              placeholder="Password (min. 6 characters)"
+              value={password}
+              onChange={e => { setPassword(e.target.value); setError(''); }}
+              onBlur={() => setTouched({ ...touched, password: true })}
+              onKeyDown={handleKeyPress}
+              className={`w-full px-4 py-3 rounded-xl border ${
+                touched.password && !isPasswordValid && password !== ''
+                  ? 'border-destructive'
+                  : 'border-input'
+              } bg-card text-foreground text-sm font-medium outline-none focus:ring-2 focus:ring-ring`}
+              disabled={loading}
+            />
+            {touched.password && !isPasswordValid && password !== '' && (
+              <p className="text-xs text-destructive mt-1">Password must be at least 6 characters</p>
+            )}
+          </div>
+          
           <button
             onClick={handleLogin}
-            disabled={loading}
+            disabled={loading || !canSubmit}
             className="w-full py-3 rounded-xl gradient-orange text-primary-foreground font-bold text-base shadow-float mt-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (

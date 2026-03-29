@@ -26,14 +26,16 @@ const AccountSwitcher = ({ isOpen, onClose }: AccountSwitcherProps) => {
     cashierPerformance = [];
   }
 
-  const handleSwitchToCashier = (cashierId: string) => {
-    const cashier = switchToCashier(cashierId);
-    if (cashier) {
-      toast.success(`Switched to ${cashier.fullName}`);
-      onClose();
-      navigate('/pos', { replace: true });
-    }
-  };
+  // Update the handleSwitchToCashier function
+const handleSwitchToCashier = (cashierId: string) => {
+  const cashier = switchToCashier(cashierId);
+  if (cashier) {
+    toast.success(`Switched to ${cashier.fullName}`);
+    onClose();
+    // Force a hard navigation to POS
+    window.location.href = '/pos';
+  }
+};
 
   const handleDeleteAccount = (userId: string, userName: string) => {
     if (user?.id === userId) {

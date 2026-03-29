@@ -4,11 +4,14 @@ export interface Supply {
   category: string;
   quantity: number;
   unit: string;
-  expiryDate: string; // ISO date string
+  expiryDate: string;
   daysUntilExpiry: number;
   status: 'good' | 'warning' | 'expired';
   addedBy: string;
   addedAt: string;
+  minStockLevel?: number;
+  initialQuantity?: number;
+  notified?: boolean;
 }
 
 export interface SupplyReminder {

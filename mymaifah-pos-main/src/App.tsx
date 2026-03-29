@@ -3,7 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import SplashScreen from "./pages/SplashScreen";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
@@ -18,14 +19,40 @@ import NotFound from "./pages/NotFound";
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const AppContent = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logout } = useAuth();
   const { getUserThemePreference } = useTheme();
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Clear any stale session on app start - ONLY ONCE
+  useEffect(() => {
+    const initApp = () => {
+      // Check if this is a fresh page load
+      const isFreshLoad = sessionStorage.getItem('app_initialized');
+      if (!isFreshLoad) {
+        // Clear any stale user data to prevent auto-login
+        localStorage.removeItem('currentUser');
+        sessionStorage.clear();
+        sessionStorage.setItem('app_initialized', 'true');
+        console.log('App initialized - cleared stale sessions');
+      }
+      setIsInitialized(true);
+    };
+    
+    initApp();
+  }, []);
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && isInitialized) {
       const userPref = getUserThemePreference(user.id);
       if (userPref === 'dark') {
         document.documentElement.classList.add('dark');
@@ -33,9 +60,9 @@ const AppContent = () => {
         document.documentElement.classList.remove('dark');
       }
     }
-  }, [user]);
+  }, [user, isInitialized]);
 
-  if (isLoading) {
+  if (isLoading || !isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -48,19 +75,21 @@ const AppContent = () => {
 
   return (
     <div className="max-w-md mx-auto min-h-screen relative bg-background">
-      <Routes>
-        <Route path="/" element={<SplashScreen />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/select" element={<SelectOperationPage />} />
-        <Route path="/pos" element={<POSPage />} />
-        <Route path="/payment" element={<PaymentPage />} />
-        <Route path="/receipt" element={<ReceiptPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/cashier-dashboard" element={<CashierDashboard />} />
-        <Route path="/expenses" element={<ExpensesPage />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<SplashScreen />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/select" element={<SelectOperationPage />} />
+          <Route path="/pos" element={<POSPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/receipt" element={<ReceiptPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/cashier-dashboard" element={<CashierDashboard />} />
+          <Route path="/expenses" element={<ExpensesPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </ErrorBoundary>
     </div>
   );
 };
@@ -69,7 +98,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <Sonner />
+      <Sonner richColors closeButton position="top-right" />
       <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
         <AppContent />
       </BrowserRouter>

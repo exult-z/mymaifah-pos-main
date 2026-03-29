@@ -7,6 +7,23 @@ import BottomNav from '@/components/BottomNav';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+// Validation function
+const validateExpense = (description: string, amount: number, category: string) => {
+  if (!description.trim()) {
+    return { valid: false, error: 'Description is required' };
+  }
+  if (description.length > 100) {
+    return { valid: false, error: 'Description is too long (max 100 characters)' };
+  }
+  if (isNaN(amount) || amount <= 0) {
+    return { valid: false, error: 'Please enter a valid amount greater than 0' };
+  }
+  if (!category) {
+    return { valid: false, error: 'Please select a category' };
+  }
+  return { valid: true, error: null };
+};
+
 const ExpensesPage = () => {
   const navigate = useNavigate();
   const { expenses, addExpense, updateExpense, deleteExpense, todayExpenses, todayExpenseTotal } = useExpenses();
@@ -20,6 +37,7 @@ const ExpensesPage = () => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   });
+  const [errors, setErrors] = useState<{ description?: string; amount?: string; category?: string }>({});
 
   const netProfit = todayRevenue - todayExpenseTotal;
 
@@ -30,6 +48,7 @@ const ExpensesPage = () => {
     const now = new Date();
     setDate(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
     setEditingId(null);
+    setErrors({});
   };
 
   const openAdd = () => {
@@ -44,23 +63,23 @@ const ExpensesPage = () => {
     setCategory(expense.category);
     setDate(new Date(expense.date).toISOString().split('T')[0]);
     setSheetOpen(true);
+    setErrors({});
   };
 
   const handleSubmit = () => {
-    if (!desc || !amount) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-    
     const amountNum = parseFloat(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      toast.error('Please enter a valid amount');
+    
+    // Validate
+    const validation = validateExpense(desc, amountNum, category);
+    
+    if (!validation.valid) {
+      toast.error(validation.error);
       return;
     }
     
     const expenseData = {
       id: editingId || Date.now().toString(),
-      description: desc,
+      description: desc.trim(),
       amount: amountNum,
       category,
       date: new Date(date + 'T12:00:00').toString(),
@@ -255,28 +274,42 @@ const ExpensesPage = () => {
                 </button>
               </div>
               <div className="space-y-3">
-                <input
-                  placeholder="Description (e.g., Rice, Vegetables, etc.)"
-                  value={desc}
-                  onChange={e => setDesc(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-secondary text-foreground outline-none text-sm focus:ring-2 focus:ring-expense"
-                />
-                <input
-                  type="number"
-                  placeholder="Amount"
-                  value={amount}
-                  onChange={e => setAmount(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-secondary text-foreground outline-none text-sm focus:ring-2 focus:ring-expense"
-                />
-                <select
-                  value={category}
-                  onChange={e => setCategory(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-secondary text-foreground outline-none text-sm focus:ring-2 focus:ring-expense"
-                >
-                  {expenseCategories.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
+                <div>
+                  <input
+                    placeholder="Description (e.g., Rice, Vegetables, etc.)"
+                    value={desc}
+                    onChange={e => setDesc(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-secondary text-foreground outline-none text-sm focus:ring-2 focus:ring-expense"
+                  />
+                  {errors.description && (
+                    <p className="text-xs text-red-500 mt-1">{errors.description}</p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    value={amount}
+                    onChange={e => setAmount(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-secondary text-foreground outline-none text-sm focus:ring-2 focus:ring-expense"
+                    min="0.01"
+                    step="0.01"
+                  />
+                  {errors.amount && (
+                    <p className="text-xs text-red-500 mt-1">{errors.amount}</p>
+                  )}
+                </div>
+                <div>
+                  <select
+                    value={category}
+                    onChange={e => setCategory(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-secondary text-foreground outline-none text-sm focus:ring-2 focus:ring-expense"
+                  >
+                    {expenseCategories.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
                 <input
                   type="date"
                   value={date}

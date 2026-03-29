@@ -3,48 +3,17 @@ import { useState, useEffect } from 'react';
 type Theme = 'light' | 'dark';
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    try {
-      // Check localStorage first
-      const saved = localStorage.getItem('theme');
-      if (saved === 'light' || saved === 'dark') return saved;
-      
-      // Check user preference from localStorage
-      const userPref = localStorage.getItem('userThemePreferences');
-      if (userPref) {
-        try {
-          const parsed = JSON.parse(userPref);
-          // Check if there's a default theme
-          const defaultTheme = parsed.default;
-          if (defaultTheme === 'light' || defaultTheme === 'dark') return defaultTheme;
-        } catch (e) {
-          console.error('Failed to parse userThemePreferences:', e);
-        }
-      }
-      
-      // Check system preference
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return 'dark';
-      }
-      return 'light';
-    } catch (error) {
-      console.error('Error getting theme preference:', error);
-      return 'light';
-    }
-  });
+  const [theme, setTheme] = useState<Theme>('light');
 
+  // Apply theme to document
   useEffect(() => {
-    try {
-      const root = document.documentElement;
-      if (theme === 'dark') {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
-      localStorage.setItem('theme', theme);
-    } catch (error) {
-      console.error('Error saving theme:', error);
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
     }
+    localStorage.setItem('theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

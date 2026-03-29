@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import logo from '@/assets/logo.png';
+import { Logo } from '@/assets/logo';
 
 const SplashScreen = () => {
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ const SplashScreen = () => {
         transition={{ duration: 0.5 }}
         className="flex flex-col items-center gap-6 text-center"
       >
-        <img src={logo} alt="Maifah Bong's Tea Cafe" className="w-48 h-auto" />
+        <Logo />
         <div>
           <h1 className="text-3xl font-black text-primary-foreground leading-tight">
             Maifah Tea Bong's Cafe

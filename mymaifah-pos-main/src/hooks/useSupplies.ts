@@ -40,6 +40,8 @@ export function useSupplies() {
       daysUntilExpiry: 0,
       status: 'good',
       addedAt: new Date().toISOString(),
+      initialQuantity: supply.quantity,
+      notified: false,
     };
     const updatedSupplies = [...supplies, newSupply];
     setSupplies(updatedSupplies);
@@ -52,6 +54,14 @@ export function useSupplies() {
     localStorage.setItem('supplies', JSON.stringify(updated));
   };
 
+  const updateSupplyQuantity = (id: string, newQuantity: number) => {
+    const updated = supplies.map(s => 
+      s.id === id ? { ...s, quantity: newQuantity } : s
+    );
+    setSupplies(updated);
+    localStorage.setItem('supplies', JSON.stringify(updated));
+  };
+
   const getExpiringSoon = () => {
     return supplies.filter(s => s.status === 'warning');
   };
@@ -60,11 +70,20 @@ export function useSupplies() {
     return supplies.filter(s => s.status === 'expired');
   };
 
+  const getLowStock = () => {
+    return supplies.filter(s => {
+      const threshold = s.minStockLevel || (s.initialQuantity ? s.initialQuantity * 0.2 : 5);
+      return s.quantity <= threshold && s.quantity > 0;
+    });
+  };
+
   return {
     supplies,
     addSupply,
     deleteSupply,
+    updateSupplyQuantity,
     getExpiringSoon,
     getExpired,
+    getLowStock,
   };
 }

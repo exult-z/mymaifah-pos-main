@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MenuItem as MenuItemType } from '@/data/menu';
 import { getMenuImage } from '@/data/menuImages';
 
@@ -12,56 +12,52 @@ interface MenuItemProps {
 
 const MenuItem = ({ item, quantity, onAdd, index }: MenuItemProps) => {
   const [imageError, setImageError] = useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
+  const [isVisible, setIsVisible] = useState(true);
+  const itemRef = useRef<HTMLDivElement>(null);
   const menuImage = getMenuImage(item.id);
   const fallbackColor = menuImage?.fallbackColor || '#FF6B35';
   const emoji = menuImage?.emoji || '🍽️';
 
-  // Preload image
   useEffect(() => {
-    if (menuImage?.imageUrl) {
-      const img = new Image();
-      img.src = menuImage.imageUrl;
-      img.onload = () => setImageLoading(false);
-      img.onerror = () => {
-        setImageError(true);
-        setImageLoading(false);
-      };
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    if (itemRef.current) {
+      observer.observe(itemRef.current);
     }
-  }, [menuImage]);
+
+    return () => {
+      if (itemRef.current) {
+        observer.unobserve(itemRef.current);
+      }
+    };
+  }, []);
 
   return (
-    <motion.button
+    <motion.div
+      ref={itemRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.02 }}
-      whileTap={{ scale: 0.95 }}
+      whileTap={{ scale: 0.97 }}
       onClick={() => onAdd(item)}
-      className="relative bg-card rounded-2xl shadow-card border border-border text-left overflow-hidden hover:shadow-lg transition-all"
+      className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all cursor-pointer active:scale-95"
     >
       {/* Image Container */}
-      <div className="relative h-32 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-        {imageLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-200 animate-pulse">
-            <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        )}
-        
-        {!imageError && menuImage?.imageUrl && (
+      <div className="relative h-36 bg-gray-100 dark:bg-gray-700 overflow-hidden">
+        {!imageError ? (
           <img
-            src={menuImage.imageUrl}
+            src={menuImage?.imageUrl}
             alt={item.name}
-            className={`w-full h-full object-cover transition-all duration-300 ${
-              imageLoading ? 'opacity-0' : 'opacity-100 hover:scale-105'
-            }`}
-            onError={() => {
-              setImageError(true);
-              setImageLoading(false);
-            }}
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            onError={() => setImageError(true)}
+            loading="lazy"
           />
-        )}
-        
-        {(imageError || !menuImage?.imageUrl) && (
+        ) : (
           <div 
             className="w-full h-full flex flex-col items-center justify-center"
             style={{ backgroundColor: fallbackColor }}
@@ -74,25 +70,25 @@ const MenuItem = ({ item, quantity, onAdd, index }: MenuItemProps) => {
         )}
         
         {/* Quantity Badge */}
-        {quantity > 0 && (
-          <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full gradient-orange text-primary-foreground text-xs font-bold flex items-center justify-center shadow-float border-2 border-white z-10">
+        {isVisible && quantity > 0 && (
+          <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold flex items-center justify-center shadow-md border-2 border-white z-10">
             {quantity}
           </div>
         )}
-        
-        {/* Price Badge */}
-        <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm rounded-full px-2 py-1 z-10">
-          <span className="text-white font-bold text-xs">₱{item.price}</span>
-        </div>
       </div>
 
       {/* Content */}
       <div className="p-3">
-        <p className="font-bold text-foreground text-sm leading-tight line-clamp-2 min-h-[40px]">
+        <p className="font-semibold text-gray-800 dark:text-white text-sm leading-tight line-clamp-2 min-h-[42px]">
           {item.name}
         </p>
+        <div className="mt-3">
+          <span className="inline-block px-3 py-1.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 font-bold text-sm">
+            ₱{item.price}
+          </span>
+        </div>
       </div>
-    </motion.button>
+    </motion.div>
   );
 };
 

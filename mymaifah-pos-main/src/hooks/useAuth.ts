@@ -2,12 +2,23 @@ import { useState, useEffect } from 'react';
 import { User, DEFAULT_ADMIN } from '@/types/user';
 import { toast } from 'sonner';
 
+// Simple hash function for demo (in production, use bcrypt)
+const simpleHash = (str: string): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString();
+};
+
 interface AuthState {
   user: User | null;
   users: User[];
   isLoading: boolean;
-  login: (email: string, password: string) => { success: boolean; user?: User; error?: string };
-  signup: (fullName: string, email: string, password: string, role: 'admin' | 'cashier') => { success: boolean; error?: string };
+  login: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>;
+  signup: (fullName: string, email: string, password: string, role: 'admin' | 'cashier') => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   setUsers: (users: User[]) => void;
   deleteUser: (userId: string) => boolean;
@@ -19,12 +30,13 @@ interface AuthState {
   updateCashierStats: (cashierId: string, amount: number) => void;
 }
 
+// Demo cashiers with hashed passwords
 const DEMO_CASHIERS: User[] = [
   {
     id: '2',
     fullName: 'Maria Santos',
     email: 'cashier1@maifah.com',
-    password: 'cashier123',
+    password: simpleHash('cashier123'),
     role: 'cashier',
     assignedOperation: 'cashier',
     cashierId: 'CASH001',
@@ -37,7 +49,7 @@ const DEMO_CASHIERS: User[] = [
     id: '3',
     fullName: 'John Reyes',
     email: 'cashier2@maifah.com',
-    password: 'cashier123',
+    password: simpleHash('cashier123'),
     role: 'cashier',
     assignedOperation: 'cashier',
     cashierId: 'CASH002',
@@ -50,7 +62,7 @@ const DEMO_CASHIERS: User[] = [
     id: '4',
     fullName: 'Anna Cruz',
     email: 'cashier3@maifah.com',
-    password: 'cashier123',
+    password: simpleHash('cashier123'),
     role: 'cashier',
     assignedOperation: 'cashier',
     cashierId: 'CASH003',
@@ -60,6 +72,11 @@ const DEMO_CASHIERS: User[] = [
     totalOrders: 0,
   },
 ];
+
+const DEFAULT_ADMIN_HASHED = {
+  ...DEFAULT_ADMIN,
+  password: simpleHash('admin123'),
+};
 
 export function useAuth(): AuthState {
   const [user, setUser] = useState<User | null>(null);
@@ -73,17 +90,23 @@ export function useAuth(): AuthState {
           return parsed;
         }
       }
-      return [DEFAULT_ADMIN, ...DEMO_CASHIERS];
+      return [DEFAULT_ADMIN_HASHED, ...DEMO_CASHIERS];
     } catch (error) {
       console.error('Failed to parse users:', error);
-      return [DEFAULT_ADMIN, ...DEMO_CASHIERS];
+      return [DEFAULT_ADMIN_HASHED, ...DEMO_CASHIERS];
     }
   });
 
   useEffect(() => {
-    localStorage.setItem('users', JSON.stringify(users));
+    try {
+      localStorage.setItem('users', JSON.stringify(users));
+    } catch (error) {
+      console.error('Failed to save users:', error);
+      alert('Storage quota exceeded. Please clear some data.');
+    }
   }, [users]);
 
+  // Load current user - BUT DON'T AUTO-LOGIN, just load if exists
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
@@ -103,9 +126,10 @@ export function useAuth(): AuthState {
     setIsLoading(false);
   }, []);
 
-  const login = (email: string, password: string) => {
+  const login = async (email: string, password: string) => {
+    const hashedPassword = simpleHash(password);
     const foundUser = users.find(
-      u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+      u => u.email.toLowerCase() === email.toLowerCase() && u.password === hashedPassword
     );
     
     if (!foundUser) {
@@ -117,12 +141,26 @@ export function useAuth(): AuthState {
     return { success: true, user: foundUser };
   };
 
-  const signup = (fullName: string, email: string, password: string, role: 'admin' | 'cashier') => {
+  const signup = async (fullName: string, email: string, password: string, role: 'admin' | 'cashier') => {
+    if (!fullName || !email || !password) {
+      return { success: false, error: 'All fields are required' };
+    }
+    
+    if (password.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters' };
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { success: false, error: 'Invalid email format' };
+    }
+    
     const exists = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (exists) {
       return { success: false, error: 'Email already registered' };
     }
     
+    const hashedPassword = simpleHash(password);
     const cashierCount = users.filter(u => u.role === 'cashier').length + 1;
     const cashierCode = `CASH${String(cashierCount).padStart(3, '0')}`;
     const userCode = `${fullName.substring(0, 2).toUpperCase()}${cashierCount}`;
@@ -131,7 +169,7 @@ export function useAuth(): AuthState {
       id: Date.now().toString(),
       fullName,
       email,
-      password,
+      password: hashedPassword,
       role,
       assignedOperation: role === 'cashier' ? 'cashier' : null,
       cashierId: role === 'cashier' ? cashierCode : undefined,
@@ -163,7 +201,7 @@ export function useAuth(): AuthState {
       return false;
     }
     
-    if (!confirm(`Remove ${userToDelete.fullName}?`)) return false;
+    if (!confirm(`Remove ${userToDelete.fullName}? This action cannot be undone.`)) return false;
     
     setUsers(users.filter(u => u.id !== userId));
     toast.success(`${userToDelete.fullName} removed`);
@@ -199,14 +237,10 @@ export function useAuth(): AuthState {
       return null;
     }
     
-    // Store current admin to return later
     sessionStorage.setItem('adminUser', JSON.stringify(user));
-    
-    // Set new user
     setUser(cashier);
     localStorage.setItem('currentUser', JSON.stringify(cashier));
     toast.success(`Switched to ${cashier.fullName}`);
-    
     return cashier;
   };
 
@@ -221,18 +255,14 @@ export function useAuth(): AuthState {
   };
 
   const logout = () => {
-    // Check if we're in a cashier session that was switched from admin
     const adminUser = sessionStorage.getItem('adminUser');
-    
     if (adminUser && user?.role === 'cashier') {
-      // Return to admin
       const admin = JSON.parse(adminUser);
       setUser(admin);
       localStorage.setItem('currentUser', JSON.stringify(admin));
       sessionStorage.removeItem('adminUser');
       toast.info('Returned to admin mode');
     } else {
-      // Normal logout
       setUser(null);
       localStorage.removeItem('currentUser');
       toast.info('Logged out successfully');
