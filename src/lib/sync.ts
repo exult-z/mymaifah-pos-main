@@ -196,9 +196,9 @@ class SyncManager {
     this.socket.on('assign_confirmed',    (d) => this._emit('assign_confirmed', d));
     this.socket.on('registered',          (d) => this._emit('registered', d));
     this.socket.on('new_order',           (d) => this._emit('new_order', d));
-    // ✅ Server acks: cashier gets notified admin was informed before logging out
-    this.socket.on('shift_confirmed',     (d) => this._emit('shift_confirmed', d));
+    // ✅ Server acks
     this.socket.on('order_confirmed',     (d) => this._emit('order_confirmed', d));
+    this.socket.on('shift_confirmed',     (d) => this._emit('shift_confirmed', d));
   }
 
   disconnect() {
