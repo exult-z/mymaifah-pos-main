@@ -7,35 +7,34 @@ const DB_VERSION = 1;
 export function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
+
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
-    
+
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
-      
-      // Create stores (tables)
+
       if (!db.objectStoreNames.contains('users')) {
         const userStore = db.createObjectStore('users', { keyPath: 'id' });
         userStore.createIndex('email', 'email', { unique: true });
       }
-      
+
       if (!db.objectStoreNames.contains('orders')) {
         const orderStore = db.createObjectStore('orders', { keyPath: 'id' });
         orderStore.createIndex('date', 'createdAt');
         orderStore.createIndex('cashierId', 'cashierId');
       }
-      
+
       if (!db.objectStoreNames.contains('expenses')) {
         const expenseStore = db.createObjectStore('expenses', { keyPath: 'id' });
         expenseStore.createIndex('date', 'createdAt');
       }
-      
+
       if (!db.objectStoreNames.contains('menu_items')) {
         const menuStore = db.createObjectStore('menu_items', { keyPath: 'id' });
-        menuStore.createIndex('category', 'categoryId');
+        menuStore.createIndex('category', 'category'); // ← fixed: was 'categoryId' which doesn't match the field name
       }
-      
+
       if (!db.objectStoreNames.contains('supplies')) {
         db.createObjectStore('supplies', { keyPath: 'id' });
       }
@@ -43,13 +42,25 @@ export function openDB() {
   });
 }
 
-// Generic CRUD operations
+// Add item — fails if id already exists (use putItem to upsert)
 export async function addItem(storeName, item) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, 'readwrite');
     const store = transaction.objectStore(storeName);
     const request = store.add(item);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Put item — safe upsert, use this for seeding so duplicate IDs don't crash
+export async function putItem(storeName, item) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+    const request = store.put(item);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -81,9 +92,9 @@ export async function updateItem(storeName, id, updates) {
   const db = await openDB();
   const item = await getItemById(storeName, id);
   if (!item) throw new Error('Item not found');
-  
+
   const updatedItem = { ...item, ...updates };
-  
+
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, 'readwrite');
     const store = transaction.objectStore(storeName);
@@ -115,7 +126,6 @@ export async function clearStore(storeName) {
   });
 }
 
-// Generate unique ID
 export function generateId() {
   return Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9);
 }

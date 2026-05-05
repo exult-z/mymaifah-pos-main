@@ -1,48 +1,37 @@
 /**
  * sync.ts  –  Singleton Socket.io client for Maifah POS real-time sync
  *
- * HOW TO USE
- * ----------
- *  1. Set SERVER_URL to your deployed server address.
- *  2. Import syncManager anywhere and call its methods.
- *  3. Listen to events with syncManager.on(event, handler) inside useEffect.
+ * HOW TO CONFIGURE
+ * ─────────────────
+ * Set SERVER_URL below to your deployed server address.
  *
- * IMPORTANT: Install socket.io-client first:
- *   npm install socket.io-client
+ * Options:
+ *   Free cloud (Railway):  'https://your-app.up.railway.app'
+ *   Free cloud (Render):   'https://your-app.onrender.com'
+ *   Local (same WiFi):     'http://192.168.1.xx:3001'   ← your PC's local IP
  */
 
 import { io, Socket } from 'socket.io-client';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ⚠️  CHANGE THIS to your server's IP or domain
-//     Examples:
-//       Local network:  'http://192.168.1.10:3001'
-//       Railway/Render: 'https://maifah-pos-server.up.railway.app'
-// ─────────────────────────────────────────────────────────────────────────────
-export const SERVER_URL = 'http://YOUR_SERVER_IP:3001';
+// ⚠️  CHANGE THIS to your deployed server URL
+export const SERVER_URL = 'https://maifah-pos-main-production.up.railway.app';
 
 export type SyncRole = 'admin' | 'cashier';
 
-export type InventoryAction =
-  | 'add_item'
-  | 'edit_item'
-  | 'delete_item'
-  | 'add_supply'
-  | 'edit_supply'
-  | 'delete_supply';
+export type MenuAction = 'add_item' | 'edit_item' | 'delete_item' | 'full_sync';
+
+export interface MenuUpdatedPayload {
+  action: MenuAction;
+  item: Record<string, unknown> | null;
+  menuItems: Record<string, unknown>[];
+  updatedBy?: string;
+  timestamp?: string;
+}
 
 export interface ModeChangedPayload {
   mode: 'inventory' | 'cashier';
   assignedBy: string;
   message: string;
-  timestamp: string;
-}
-
-export interface InventoryUpdatePayload {
-  action: InventoryAction;
-  item: Record<string, unknown>;
-  cashierId: string;
-  cashierName: string;
   timestamp: string;
 }
 
@@ -63,21 +52,19 @@ class SyncManager {
 
   /** Connect and register with the server. Safe to call multiple times. */
   connect(userId: string, role: SyncRole, name: string) {
-    // Already registered as same user — skip
     if (this.socket?.connected && this.registeredUserId === userId) return;
 
-    // Already have a socket but different user — re-register
     if (this.socket?.connected) {
       this.socket.emit('register', { userId, role, name });
       this.registeredUserId = userId;
       return;
     }
 
-    // Create new socket
     this.socket = io(SERVER_URL, {
-      transports: ['websocket'],
-      reconnectionAttempts: 5,
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
     });
 
     this.socket.on('connect', () => {
@@ -87,7 +74,7 @@ class SyncManager {
     });
 
     this.socket.on('disconnect', () => {
-      console.log('[Sync] Disconnected from server');
+      console.log('[Sync] Disconnected — will auto-reconnect');
     });
 
     this.socket.on('connect_error', (err) => {
@@ -95,8 +82,8 @@ class SyncManager {
     });
 
     // ── Incoming events ────────────────────────────────────────────────
+    this.socket.on('menu_updated',      (d) => this._emit('menu_updated', d));
     this.socket.on('mode_changed',      (d) => this._emit('mode_changed', d));
-    this.socket.on('inventory_update',  (d) => this._emit('inventory_update', d));
     this.socket.on('cashier_online',    (d) => this._emit('cashier_online', d));
     this.socket.on('cashier_offline',   (d) => this._emit('cashier_offline', d));
     this.socket.on('assign_confirmed',  (d) => this._emit('assign_confirmed', d));
@@ -113,8 +100,7 @@ class SyncManager {
     return this.socket?.connected ?? false;
   }
 
-  // ── Subscribe to server events ──────────────────────────────────────
-
+  // ── Subscribe to events ────────────────────────────────────────────────
   on<T = unknown>(event: string, listener: Listener<T>): () => void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
@@ -129,7 +115,22 @@ class SyncManager {
     this.listeners.get(event)?.forEach((l) => l(data));
   }
 
-  // ── Emit to server ──────────────────────────────────────────────────
+  // ── Emit menu changes to server (admin calls these) ────────────────────
+
+  /** Notify all devices: a menu item was added */
+  menuItemAdded(item: Record<string, unknown>) {
+    this.socket?.emit('menu_change', { action: 'add_item', item });
+  }
+
+  /** Notify all devices: a menu item was updated */
+  menuItemUpdated(item: Record<string, unknown>) {
+    this.socket?.emit('menu_change', { action: 'edit_item', item });
+  }
+
+  /** Notify all devices: a menu item was deleted */
+  menuItemDeleted(itemId: string) {
+    this.socket?.emit('menu_change', { action: 'delete_item', item: { id: itemId } });
+  }
 
   /** Admin: put cashier into inventory mode */
   assignInventory(cashierId: string, cashierName: string) {
@@ -140,12 +141,7 @@ class SyncManager {
   assignCashier(cashierId: string, cashierName: string) {
     this.socket?.emit('assign_cashier', { cashierId, cashierName });
   }
-
-  /** Cashier: notify admin of an inventory change */
-  inventoryAction(action: InventoryAction, item: Record<string, unknown>) {
-    this.socket?.emit('inventory_action', { action, item });
-  }
 }
 
-// Export a singleton — import this everywhere
+// Singleton — import this everywhere
 export const syncManager = new SyncManager();

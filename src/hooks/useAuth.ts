@@ -117,6 +117,8 @@ export function useAuth(): AuthState {
         const validUser = users.find(u => u.id === parsedUser.id);
         if (validUser) {
           setUser(validUser);
+          // ── Auto-connect sync on app load ──────────────────
+          syncManager.connect(validUser.id, validUser.role, validUser.fullName);
         } else {
           localStorage.removeItem('currentUser');
         }

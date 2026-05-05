@@ -10,17 +10,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import AccountSwitcher from '@/components/AccountSwitcher';
 import { toast } from 'sonner';
-import { getAllMenuItems, searchMenuItems } from '../../posLogic';  // ← Added
+import { menuItems as staticMenuItems } from '@/data/menu';
 import type { MenuItem } from '@/data/menu';
-
-type MenuItemData = {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  description?: string;
-  image?: string;
-};
+import { getAllItems, putItem, deleteItem } from '@/lib/indexedDB';
+import { syncManager, type MenuUpdatedPayload } from '@/lib/sync';
 
 const POSPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -34,15 +27,18 @@ const POSPage = () => {
   const { user, isLoading: authLoading, logout } = useAuth();
   const { theme, toggleTheme, setUserThemePreference } = useTheme();
 
-  // Load menu items from IndexedDB
   const loadMenuItems = async () => {
     setLoading(true);
     try {
-      const items = await getAllMenuItems();
+      let items: MenuItem[] = await getAllItems('menu_items');
+      if (items.length === 0) {
+        await Promise.all(staticMenuItems.map(item => putItem('menu_items', item)));
+        items = staticMenuItems;
+      }
       setMenuItems(items);
     } catch (error) {
-      console.error("Failed to load menu items:", error);
-      toast.error("Failed to load menu");
+      console.error('Failed to load menu items:', error);
+      setMenuItems(staticMenuItems);
     } finally {
       setLoading(false);
     }
@@ -52,44 +48,59 @@ const POSPage = () => {
     loadMenuItems();
   }, []);
 
-  // Redirect if not logged in
+  // Listen for live menu changes from admin via server
+  useEffect(() => {
+    const unsub = syncManager.on<MenuUpdatedPayload>('menu_updated', async (payload) => {
+      console.log('[POSPage] menu_updated:', payload.action);
+      if (payload.menuItems && Array.isArray(payload.menuItems)) {
+        await Promise.all((payload.menuItems as any[]).map(i => putItem('menu_items', i)));
+        if (payload.action === 'delete_item' && payload.item?.id) {
+          try { await deleteItem('menu_items', payload.item.id as string); } catch {}
+        }
+        setMenuItems(payload.menuItems as unknown as MenuItem[]);
+        const msg: Record<string, string> = {
+          add_item:    'New item added to menu',
+          edit_item:   'Menu item updated',
+          delete_item: 'Menu item removed',
+          full_sync:   'Menu synced',
+        };
+        toast.info(msg[payload.action] ?? 'Menu updated');
+      }
+    });
+    return () => unsub();
+  }, []);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login', { replace: true });
     }
   }, [authLoading, user, navigate]);
 
- const filteredItems = useMemo(() => {
-  let items = menuItems;
-  if (selectedCategory !== 'All') {
-    items = items.filter(i => i.category === selectedCategory);
-  }
-  if (search) {
-    const searchLower = search.toLowerCase();
-    items = items.filter(i =>
-      i.name.toLowerCase().includes(searchLower) ||
-      i.description?.toLowerCase().includes(searchLower)
-    );
-  }
-  return items;
-}, [menuItems, selectedCategory, search]);
+  const filteredItems = useMemo(() => {
+    let items = menuItems;
+    if (selectedCategory !== 'All') {
+      items = items.filter(i => i.category === selectedCategory);
+    }
+    if (search) {
+      const searchLower = search.toLowerCase();
+      items = items.filter(i =>
+        i.name.toLowerCase().includes(searchLower) ||
+        i.description?.toLowerCase().includes(searchLower)
+      );
+    }
+    return items;
+  }, [menuItems, selectedCategory, search]);
 
   const getItemQty = (id: string) => cart.find(c => c.id === id)?.quantity || 0;
 
   const handleAddToCart = (item: any) => {
-    if (item.price <= 0) {
-      toast.error('Invalid item price');
-      return;
-    }
+    if (item.price <= 0) { toast.error('Invalid item price'); return; }
     addToCart(item);
     toast.success(`Added ${item.name} to cart`);
   };
 
   const handleCheckout = () => {
-    if (cart.length === 0) {
-      toast.error('Cart is empty');
-      return;
-    }
+    if (cart.length === 0) { toast.error('Cart is empty'); return; }
     setCartOpen(false);
     navigate('/payment', { state: { cart, cartTotal } });
   };
@@ -98,20 +109,14 @@ const POSPage = () => {
 
   const handleThemeToggle = () => {
     toggleTheme();
-    if (user?.id) {
-      setUserThemePreference(user.id, theme === 'light' ? 'dark' : 'light');
-    }
+    if (user?.id) setUserThemePreference(user.id, theme === 'light' ? 'dark' : 'light');
   };
 
   const goBack = () => {
-    if (user?.role === 'cashier') {
-      navigate('/cashier-dashboard', { replace: true });
-    } else {
-      navigate('/dashboard', { replace: true });
-    }
+    if (user?.role === 'cashier') navigate('/cashier-dashboard', { replace: true });
+    else navigate('/dashboard', { replace: true });
   };
 
-  // Get unique categories from actual data
   const availableCategories = useMemo(() => {
     const cats = new Set(menuItems.map(item => item.category));
     return ['All', ...Array.from(cats)];
@@ -133,7 +138,6 @@ const POSPage = () => {
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-        {/* Header */}
         <div className="sticky top-0 z-20">
           <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-4 pt-6 pb-4">
             <div className="flex justify-between items-center mb-4">
@@ -145,61 +149,43 @@ const POSPage = () => {
                 <p className="text-xs text-white/80">Cashier: {user.fullName}</p>
               </div>
               <div className="flex gap-2">
-<button onClick={handleThemeToggle} className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">                  {theme === 'light' ? <Moon className="w-5 h-5 text-white" /> : <Sun className="w-5 h-5 text-white" />}
+                <button onClick={handleThemeToggle} className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                  {theme === 'light' ? <Moon className="w-5 h-5 text-white" /> : <Sun className="w-5 h-5 text-white" />}
                 </button>
-<button onClick={() => setShowAccountSwitcher(true)} className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">                  <Users className="w-5 h-5 text-white" />
+                <button onClick={() => setShowAccountSwitcher(true)} className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-white" />
                 </button>
-<button onClick={handleLogout} className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">                  <LogOut className="w-5 h-5 text-white" />
+                <button onClick={handleLogout} className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                  <LogOut className="w-5 h-5 text-white" />
                 </button>
               </div>
             </div>
-
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search menu..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/20 text-white placeholder:text-white/60 outline-none text-sm font-medium"
-              />
+              <input type="text" placeholder="Search menu..." value={search} onChange={e => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/20 text-white placeholder:text-white/60 outline-none text-sm font-medium" />
             </div>
           </div>
-
-          {/* Dynamic Categories */}
           <div className="bg-white dark:bg-gray-800 px-4 py-3 overflow-x-auto border-b border-gray-200 dark:border-gray-700">
             <div className="flex gap-2" style={{ minWidth: 'min-content' }}>
               {availableCategories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                <button key={cat} onClick={() => setSelectedCategory(cat)}
                   className={`px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap ${
                     selectedCategory === cat
                       ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {cat}
-                </button>
+                  }`}>{cat}</button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Product Grid */}
         <div className="px-3 py-4 pb-28">
           <div className="grid grid-cols-2 gap-3">
             {filteredItems.map((item, i) => (
-              <MenuItemComponent
-                key={item.id}
-                item={item}
-                quantity={getItemQty(item.id)}
-                onAdd={handleAddToCart}
-                index={i}
-              />
+              <MenuItemComponent key={item.id} item={item} quantity={getItemQty(item.id)} onAdd={handleAddToCart} index={i} />
             ))}
           </div>
-          
           {filteredItems.length === 0 && (
             <div className="text-center py-12">
               <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -208,22 +194,15 @@ const POSPage = () => {
           )}
         </div>
 
-        {/* Floating Cart Button */}
         <AnimatePresence>
           {cartCount > 0 && !cartOpen && (
-            <motion.button
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 100, opacity: 0 }}
+            <motion.button initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
               onClick={() => setCartOpen(true)}
-              className="fixed bottom-32 left-4 right-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl py-4 px-6 flex items-center justify-between shadow-lg z-40"
-            >
+              className="fixed bottom-32 left-4 right-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl py-4 px-6 flex items-center justify-between shadow-lg z-40">
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <ShoppingBag className="w-5 h-5 text-white" />
-                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-bold">
-                    {cartCount}
-                  </span>
+                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-bold">{cartCount}</span>
                 </div>
                 <span className="text-white font-semibold">View Order</span>
               </div>
@@ -232,24 +211,11 @@ const POSPage = () => {
           )}
         </AnimatePresence>
 
-        <CartDrawer
-          open={cartOpen}
-          onClose={() => setCartOpen(false)}
-          cart={cart}
-          cartTotal={cartTotal}
-          onAdd={addToCart}
-          onRemove={removeFromCart}
-          onClear={clearCart}
-          onCheckout={handleCheckout}
-        />
-
+        <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} cartTotal={cartTotal}
+          onAdd={addToCart} onRemove={removeFromCart} onClear={clearCart} onCheckout={handleCheckout} />
         {!cartOpen && <BottomNav />}
       </div>
-
-      <AccountSwitcher 
-        isOpen={showAccountSwitcher}
-        onClose={() => setShowAccountSwitcher(false)}
-      />
+      <AccountSwitcher isOpen={showAccountSwitcher} onClose={() => setShowAccountSwitcher(false)} />
     </>
   );
 };
