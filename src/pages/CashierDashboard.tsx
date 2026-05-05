@@ -128,17 +128,29 @@ const CashierDashboard = () => {
       isRead: false,
     };
 
+    // 1. Save locally first
     addShift(shiftRecord);
-    syncManager.cashierEndShift(shiftRecord as unknown as ShiftPayload); // notify admin via socket
     localStorage.removeItem('shiftStartTime');
-    
-    toast.success('Shift ended! Admin has been notified.', { duration: 4000 });
     setShowEndShiftDialog(false);
-    
-    // Log out after ending shift
-    setTimeout(() => {
+    toast.success('Shift ended! Notifying admin…', { duration: 3000 });
+
+    // 2. Emit to server — do NOT logout yet, wait for server ack
+    syncManager.cashierEndShift(shiftRecord as unknown as ShiftPayload);
+
+    // 3. Listen for server confirmation that admin was notified
+    const unsubAck = syncManager.on('shift_confirmed', () => {
+      unsubAck();
+      clearTimeout(fallback);
+      toast.success('Admin has been notified. Logging out…', { duration: 2000 });
+      setTimeout(() => logout(), 1200);
+    });
+
+    // 4. Safety fallback — if no ack within 4s, log out anyway
+    const fallback = setTimeout(() => {
+      unsubAck();
+      toast.info('Logged out.', { duration: 2000 });
       logout();
-    }, 1500);
+    }, 4000);
   };
 
   if (isLoading) {

@@ -90,18 +90,67 @@ export interface ShiftPayload {
 
 type Listener<T = unknown> = (data: T) => void;
 
+/** Events queued while the socket is not yet connected */
+interface QueuedEvent {
+  event: string;
+  data: unknown;
+}
+
 class SyncManager {
   private socket: Socket | null = null;
   private registeredUserId: string | null = null;
   private listeners = new Map<string, Set<Listener>>();
 
+  /** Holds events that arrived before the socket was connected */
+  private _queue: QueuedEvent[] = [];
+
+  /** Last registration args so we can re-register after reconnect */
+  private _lastRegArgs: { userId: string; role: SyncRole; name: string } | null = null;
+
+  // ── Internal helpers ───────────────────────────────────────────────────
+
+  /**
+   * Emit an event safely.
+   * If the socket is connected → emit immediately.
+   * If not connected yet → push to queue; it will be drained on 'connect'.
+   */
+  private emitSafe(event: string, data: unknown) {
+    if (this.socket?.connected) {
+      this.socket.emit(event, data);
+    } else {
+      console.warn(`[Sync] Socket not ready — queuing "${event}"`);
+      this._queue.push({ event, data });
+    }
+  }
+
+  /** Drain queued events once the socket is connected */
+  private drainQueue() {
+    if (this._queue.length === 0) return;
+    console.log(`[Sync] Draining ${this._queue.length} queued event(s)`);
+    const toSend = [...this._queue];
+    this._queue = [];
+    for (const { event, data } of toSend) {
+      this.socket!.emit(event, data);
+    }
+  }
+
+  // ── Connection ─────────────────────────────────────────────────────────
+
   /** Connect and register with the server. Safe to call multiple times. */
   connect(userId: string, role: SyncRole, name: string) {
-    if (this.socket?.connected && this.registeredUserId === userId) return;
+    this._lastRegArgs = { userId, role, name };
 
+    // Already connected — just re-register if userId changed
     if (this.socket?.connected) {
-      this.socket.emit('register', { userId, role, name });
-      this.registeredUserId = userId;
+      if (this.registeredUserId !== userId) {
+        this.socket.emit('register', { userId, role, name });
+        this.registeredUserId = userId;
+      }
+      return;
+    }
+
+    // Socket exists but is still connecting — update args and wait
+    if (this.socket && !this.socket.connected) {
       return;
     }
 
@@ -114,8 +163,20 @@ class SyncManager {
 
     this.socket.on('connect', () => {
       console.log('[Sync] Connected to server');
-      this.socket!.emit('register', { userId, role, name });
-      this.registeredUserId = userId;
+      const args = this._lastRegArgs!;
+      this.socket!.emit('register', { userId: args.userId, role: args.role, name: args.name });
+      this.registeredUserId = args.userId;
+      // ✅ Flush any events that were emitted before the connection was ready
+      this.drainQueue();
+    });
+
+    this.socket.on('reconnect', () => {
+      console.log('[Sync] Reconnected — re-registering');
+      const args = this._lastRegArgs;
+      if (args) {
+        this.socket!.emit('register', { userId: args.userId, role: args.role, name: args.name });
+        this.drainQueue();
+      }
     });
 
     this.socket.on('disconnect', () => {
@@ -127,20 +188,25 @@ class SyncManager {
     });
 
     // ── Incoming events ────────────────────────────────────────────────
-    this.socket.on('menu_updated',       (d) => this._emit('menu_updated', d));
-    this.socket.on('mode_changed',       (d) => this._emit('mode_changed', d));
-    this.socket.on('cashier_online',     (d) => this._emit('cashier_online', d));
-    this.socket.on('cashier_offline',    (d) => this._emit('cashier_offline', d));
-    this.socket.on('cashier_status_list',(d) => this._emit('cashier_status_list', d));
-    this.socket.on('assign_confirmed',   (d) => this._emit('assign_confirmed', d));
-    this.socket.on('registered',         (d) => this._emit('registered', d));
-    this.socket.on('new_order',          (d) => this._emit('new_order', d));
+    this.socket.on('menu_updated',        (d) => this._emit('menu_updated', d));
+    this.socket.on('mode_changed',        (d) => this._emit('mode_changed', d));
+    this.socket.on('cashier_online',      (d) => this._emit('cashier_online', d));
+    this.socket.on('cashier_offline',     (d) => this._emit('cashier_offline', d));
+    this.socket.on('cashier_status_list', (d) => this._emit('cashier_status_list', d));
+    this.socket.on('assign_confirmed',    (d) => this._emit('assign_confirmed', d));
+    this.socket.on('registered',          (d) => this._emit('registered', d));
+    this.socket.on('new_order',           (d) => this._emit('new_order', d));
+    // ✅ Server acks: cashier gets notified admin was informed before logging out
+    this.socket.on('shift_confirmed',     (d) => this._emit('shift_confirmed', d));
+    this.socket.on('order_confirmed',     (d) => this._emit('order_confirmed', d));
   }
 
   disconnect() {
     this.socket?.disconnect();
     this.socket = null;
     this.registeredUserId = null;
+    this._lastRegArgs = null;
+    this._queue = [];
   }
 
   isConnected(): boolean {
@@ -165,25 +231,25 @@ class SyncManager {
   // ── Emit menu changes to server (admin calls these) ────────────────────
 
   menuItemAdded(item: Record<string, unknown>) {
-    this.socket?.emit('menu_change', { action: 'add_item', item });
+    this.emitSafe('menu_change', { action: 'add_item', item });
   }
 
   menuItemUpdated(item: Record<string, unknown>) {
-    this.socket?.emit('menu_change', { action: 'edit_item', item });
+    this.emitSafe('menu_change', { action: 'edit_item', item });
   }
 
   menuItemDeleted(itemId: string) {
-    this.socket?.emit('menu_change', { action: 'delete_item', item: { id: itemId } });
+    this.emitSafe('menu_change', { action: 'delete_item', item: { id: itemId } });
   }
 
   /** Admin: put cashier into inventory mode */
   assignInventory(cashierId: string, cashierName: string) {
-    this.socket?.emit('assign_inventory', { cashierId, cashierName });
+    this.emitSafe('assign_inventory', { cashierId, cashierName });
   }
 
   /** Admin: switch cashier back to cashier mode */
   assignCashier(cashierId: string, cashierName: string) {
-    this.socket?.emit('assign_cashier', { cashierId, cashierName });
+    this.emitSafe('assign_cashier', { cashierId, cashierName });
   }
 
   // ── Cashier lifecycle events ───────────────────────────────────────────
@@ -193,7 +259,7 @@ class SyncManager {
    * Call this AFTER a successful login(), not on app open.
    */
   cashierLogin(cashierId: string, cashierName: string) {
-    this.socket?.emit('cashier_login', {
+    this.emitSafe('cashier_login', {
       cashierId,
       cashierName,
       timestamp: new Date().toISOString(),
@@ -205,15 +271,16 @@ class SyncManager {
    * Call this when the cashier confirms the end-shift dialog.
    */
   cashierEndShift(shift: ShiftPayload) {
-    this.socket?.emit('cashier_end_shift', { shift });
+    this.emitSafe('cashier_end_shift', { shift });
   }
 
   /**
    * Cashier completed a sale — notify admin in real-time.
-   * Call this right after addSale() in PaymentPage.
+   * ✅ Now uses emitSafe: if the socket isn't connected yet, the event is
+   *    queued and sent automatically once the connection is established.
    */
   newOrder(order: OrderPayload) {
-    this.socket?.emit('new_order', { order });
+    this.emitSafe('new_order', { order });
   }
 }
 

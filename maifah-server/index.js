@@ -123,23 +123,32 @@ io.on('connection', (socket) => {
     shifts.unshift(shift);
     if (shifts.length > 1000) shifts = shifts.slice(0, 1000);
     saveJSON(SHIFTS_FILE, shifts);
+    // Notify all admins immediately
     broadcastToAdmins('cashier_offline', {
       cashierId: shift.cashierId,
       cashierName: shift.cashierName,
       timestamp: shift.shiftEnd,
       shift,
     });
+    // ✅ Confirm back to the cashier so the client knows it's safe to logout
+    socket.emit('shift_confirmed', { ok: true, cashierId: shift.cashierId });
   });
 
   // 4. NEW ORDER — cashier completed a sale
   socket.on('new_order', ({ order }) => {
+    // Use registered client name if available — fall back to order payload
+    // This fixes the race where new_order arrives before register is processed
     const client = clients.get(socket.id);
-    if (!client) return;
-    console.log('  [ORDER]', client.name, '->', order.orderNumber, 'P' + order.total);
+    const cashierName = client?.name || order.cashierName || 'Cashier';
+    console.log('  [ORDER]', cashierName, '->', order.orderNumber, 'P' + order.total);
     orders.unshift(order);
     if (orders.length > 500) orders = orders.slice(0, 500);
     saveJSON(ORDERS_FILE, orders);
-    broadcastToAdmins('new_order', { order, cashierName: client.name, timestamp: new Date().toISOString() });
+    // socket.broadcast.emit sends to ALL other connected sockets — no client lookup needed
+    // This guarantees admin receives the event regardless of registration state
+    socket.broadcast.emit('new_order', { order, cashierName, timestamp: new Date().toISOString() });
+    // Confirm back to cashier so it knows the server received it
+    socket.emit('order_confirmed', { orderId: order.id });
   });
 
   // 5. MENU CHANGES (admin)

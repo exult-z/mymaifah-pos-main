@@ -79,6 +79,10 @@ const DashboardPage = () => {
   useEffect(() => {
     if (!user || user.role !== 'admin') return;
 
+    // Ensure socket is connected — useAuth calls connect() at login but
+    // if the admin refreshes directly to /dashboard it may not be called yet
+    syncManager.connect(user.id, user.role, user.fullName);
+
     const addNotification = (type: 'inventory_update' | 'cashier_online' | 'cashier_offline' | 'new_order', message: string, cashierName: string, detail?: string) => {
       const notif = {
         id: Date.now().toString(),
