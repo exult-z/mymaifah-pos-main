@@ -10,10 +10,13 @@ import { toast } from 'sonner';
 import { ShiftRecord } from '@/types/user';
 // ─── Real-time sync ────────────────────────────────────────────────────────
 import { syncManager, ModeChangedPayload } from '@/lib/sync';
+import type { ShiftPayload } from '@/lib/sync';
 
 const CashierDashboard = () => {
   const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
   const [showEndShiftDialog, setShowEndShiftDialog] = useState(false);
+  // True when admin assigns this cashier to inventory mode — shows Switch Mode button
+  const [pendingInventoryMode, setPendingInventoryMode] = useState(false);
   const [shiftStartTime] = useState(() => {
     const stored = localStorage.getItem('shiftStartTime');
     return stored ? stored : new Date().toISOString();
@@ -54,9 +57,12 @@ const CashierDashboard = () => {
 
     const unsub = syncManager.on<ModeChangedPayload>('mode_changed', (data) => {
       if (data.mode === 'inventory') {
-        toast.success(`📦 ${data.assignedBy} assigned you to Inventory Mode!`, { duration: 5000 });
-        // Auto-navigate to cashier inventory after brief delay so the toast is seen
-        setTimeout(() => navigate('/cashier-inventory', { replace: true }), 2500);
+        toast.success(`📦 ${data.assignedBy} assigned you to Inventory Mode!`, { duration: 6000 });
+        // Show the Switch Mode button so the cashier can navigate at their own pace
+        setPendingInventoryMode(true);
+      } else if (data.mode === 'cashier') {
+        toast.info(`🛒 ${data.assignedBy} switched you back to Cashier Mode.`, { duration: 4000 });
+        setPendingInventoryMode(false);
       }
     });
 
@@ -123,6 +129,7 @@ const CashierDashboard = () => {
     };
 
     addShift(shiftRecord);
+    syncManager.cashierEndShift(shiftRecord as unknown as ShiftPayload); // notify admin via socket
     localStorage.removeItem('shiftStartTime');
     
     toast.success('Shift ended! Admin has been notified.', { duration: 4000 });
@@ -176,13 +183,13 @@ const CashierDashboard = () => {
               </div>
             </div>
             <div className="flex gap-2">
-  {user.assignedOperation === 'inventory' && (
+  {(user.assignedOperation === 'inventory' || pendingInventoryMode) && (
   <button
     onClick={() => navigate('/select')}
-    title="Switch Mode"
-    className="p-2 rounded-full bg-primary-foreground/20 hover:bg-primary-foreground/30 transition-colors flex items-center justify-center"
+    title="Switch Mode — Admin assigned you to Inventory"
+    className="p-2 rounded-full bg-yellow-400/80 hover:bg-yellow-400 transition-colors flex items-center justify-center animate-pulse"
 >
-  <ArrowLeftRight className="w-5 h-5 text-primary-foreground" />
+  <ArrowLeftRight className="w-5 h-5 text-yellow-900" />
   </button>
 )}
   <button
@@ -300,6 +307,29 @@ const CashierDashboard = () => {
               <p className="text-xs text-muted-foreground mt-1">All cashiers combined</p>
             </div>
           </div>
+
+          {/* Admin-assigned Inventory Mode Banner */}
+          {pendingInventoryMode && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 bg-yellow-50 dark:bg-yellow-950 border border-yellow-300 dark:border-yellow-700 rounded-2xl p-4 flex items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-3">
+                <Package className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                <div>
+                  <p className="font-bold text-yellow-800 dark:text-yellow-200 text-sm">Inventory Mode Assigned</p>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-400">Admin has assigned you to inventory. Tap to switch.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate('/select')}
+                className="flex-shrink-0 px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl text-xs font-bold transition-colors"
+              >
+                Switch Now
+              </button>
+            </motion.div>
+          )}
 
           {/* Quick Actions */}
           <div className="mb-4">

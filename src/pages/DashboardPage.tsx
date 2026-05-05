@@ -15,7 +15,7 @@ import AccountSwitcher from '@/components/AccountSwitcher';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import ConfirmDialog from '@/components/ConfirmDialog';
 // ─── Real-time sync ────────────────────────────────────────────────────────
-import { syncManager, InventoryUpdatePayload, CashierPresencePayload } from '@/lib/sync';
+import { syncManager, InventoryUpdatePayload, CashierPresencePayload, NewOrderPayload } from '@/lib/sync';
 
 const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState<'sales' | 'expenses' | 'supplies' | 'cashiers' | 'users' | 'shifts' | 'menu'>('sales');
@@ -29,11 +29,13 @@ const DashboardPage = () => {
   // ── Real-time sync notifications ──────────────────────────────────────
   const [syncNotifications, setSyncNotifications] = useState<Array<{
     id: string;
-    type: 'inventory_update' | 'cashier_online' | 'cashier_offline';
+    type: 'inventory_update' | 'cashier_online' | 'cashier_offline' | 'new_order';
     message: string;
     cashierName: string;
     timestamp: string;
     read: boolean;
+    /** Extra detail shown in the notification panel */
+    detail?: string;
   }>>([]);
 
   const unreadSyncCount = syncNotifications.filter(n => !n.read).length;
@@ -41,7 +43,7 @@ const DashboardPage = () => {
   const [filteredExpenses, setFilteredExpenses] = useState(0);
   const [filteredOrders, setFilteredOrders] = useState(0);
   const { theme, toggleTheme, setUserThemePreference } = useTheme();
-  const { shifts, markShiftRead, markAllShiftsRead, unreadCount } = useShifts();
+  const { shifts, addShift, markShiftRead, markAllShiftsRead, unreadCount } = useShifts();
   const navigate = useNavigate();
   
   const { 
@@ -51,6 +53,7 @@ const DashboardPage = () => {
     getLast7DaysRevenue, 
     todaySales, 
     sales,
+    addSale,
     getCashierPerformance,
     voidOrder,
   } = useSales();
@@ -76,7 +79,7 @@ const DashboardPage = () => {
   useEffect(() => {
     if (!user || user.role !== 'admin') return;
 
-    const addNotification = (type: 'inventory_update' | 'cashier_online' | 'cashier_offline', message: string, cashierName: string) => {
+    const addNotification = (type: 'inventory_update' | 'cashier_online' | 'cashier_offline' | 'new_order', message: string, cashierName: string, detail?: string) => {
       const notif = {
         id: Date.now().toString(),
         type,
@@ -84,6 +87,7 @@ const DashboardPage = () => {
         cashierName,
         timestamp: new Date().toISOString(),
         read: false,
+        detail,
       };
       setSyncNotifications(prev => [notif, ...prev].slice(0, 50));
       toast.info(message, { duration: 4000 });
@@ -108,17 +112,37 @@ const DashboardPage = () => {
     });
 
     const unsubOnline = syncManager.on<CashierPresencePayload>('cashier_online', (data) => {
-      addNotification('cashier_online', `🟢 ${data.cashierName} is now online`, data.cashierName);
+      addNotification('cashier_online', `🟢 ${data.cashierName} started their shift`, data.cashierName);
     });
 
     const unsubOffline = syncManager.on<CashierPresencePayload>('cashier_offline', (data) => {
-      addNotification('cashier_offline', `🔴 ${data.cashierName} went offline`, data.cashierName);
+      const shiftInfo = data.shift
+        ? `Orders: ${data.shift.totalOrders} | Sales: ₱${data.shift.totalSales.toLocaleString()}`
+        : undefined;
+      addNotification('cashier_offline', `🔴 ${data.cashierName} ended their shift`, data.cashierName, shiftInfo);
+      // Persist the shift report locally so admin can see it in Shift Reports tab
+      if (data.shift) {
+        addShift(data.shift as any);
+      }
+    });
+
+    const unsubNewOrder = syncManager.on<NewOrderPayload>('new_order', (data) => {
+      const items = data.order.items.map(i => `${i.quantity}× ${i.name}`).join(', ');
+      addNotification(
+        'new_order',
+        `🛒 ${data.cashierName} → ${data.order.orderNumber} ₱${data.order.total.toLocaleString()}`,
+        data.cashierName,
+        items,
+      );
+      // Also inject into local sales store so admin dashboard stats update live
+      addSale(data.order as any);
     });
 
     return () => {
       unsubInventory();
       unsubOnline();
       unsubOffline();
+      unsubNewOrder();
     };
   }, [user]);
 
@@ -751,18 +775,32 @@ const DashboardPage = () => {
                         Mark all read
                       </button>
                     </div>
-                    {syncNotifications.map(notif => (
-                      <div
-                        key={notif.id}
-                        className={`rounded-2xl p-3 mb-2 cursor-pointer ${!notif.read ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-200'}`}
-                        onClick={() => setSyncNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n))}
-                      >
-                        <p className="text-sm font-medium text-gray-800">{notif.message}</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {new Date(notif.timestamp).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                    ))}
+                    {syncNotifications.map(notif => {
+                      const bgClass = !notif.read
+                        ? notif.type === 'new_order'
+                          ? 'bg-green-50 border border-green-200 dark:bg-green-950 dark:border-green-800'
+                          : notif.type === 'cashier_online'
+                          ? 'bg-blue-50 border border-blue-200 dark:bg-blue-950 dark:border-blue-800'
+                          : notif.type === 'cashier_offline'
+                          ? 'bg-red-50 border border-red-200 dark:bg-red-950 dark:border-red-800'
+                          : 'bg-blue-50 border border-blue-200'
+                        : 'bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-700';
+                      return (
+                        <div
+                          key={notif.id}
+                          className={`rounded-2xl p-3 mb-2 cursor-pointer ${bgClass}`}
+                          onClick={() => setSyncNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n))}
+                        >
+                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{notif.message}</p>
+                          {notif.detail && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 italic">{notif.detail}</p>
+                          )}
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(notif.timestamp).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
                 {/* ── Shift notifications ───────────────────────────── */}

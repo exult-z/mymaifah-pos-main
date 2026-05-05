@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { CartItem } from '@/data/menu';
 import { useSales, useCart } from '@/hooks/useStore';
 import { useAuth } from '@/hooks/useAuth';
+import { syncManager } from '@/lib/sync';
 
 // Global order counter persisted in localStorage
 function getNextOrderNumber(): number {
@@ -50,6 +51,7 @@ const PaymentPage = () => {
     };
     
     addSale(sale);
+    syncManager.newOrder(sale); // real-time notify admin
     clearCart();
     
     navigate('/receipt', {

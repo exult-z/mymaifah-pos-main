@@ -51,7 +51,11 @@ export function useSales() {
   const sales = useStoreData(salesStore);
 
   const addSale = useCallback((sale: SaleRecord) => {
-    salesStore.set(prev => [sale, ...prev]);
+    salesStore.set(prev => {
+      // Prevent duplicate — socket may deliver an order already in local store
+      if (prev.some(s => s.id === sale.id)) return prev;
+      return [sale, ...prev];
+    });
   }, []);
 
   const voidOrder = useCallback((orderId: string) => {

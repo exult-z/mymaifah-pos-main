@@ -28,6 +28,13 @@ export interface MenuUpdatedPayload {
   timestamp?: string;
 }
 
+export interface InventoryUpdatePayload {
+  action: string;
+  cashierName: string;
+  item: unknown;
+  timestamp?: string;
+}
+
 export interface ModeChangedPayload {
   mode: 'inventory' | 'cashier';
   assignedBy: string;
@@ -39,6 +46,44 @@ export interface CashierPresencePayload {
   cashierId: string;
   cashierName: string;
   timestamp: string;
+  /** Full shift record — only present on cashier_offline */
+  shift?: ShiftPayload;
+}
+
+export interface CashierStatusListPayload {
+  cashierId: string;
+  cashierName: string;
+}
+
+export interface OrderPayload {
+  id: string;
+  orderNumber: string;
+  items: { id: string; name: string; price: number; quantity: number }[];
+  total: number;
+  paymentMethod: string;
+  date: string;
+  cashierName?: string;
+  cashierId?: string;
+}
+
+export interface NewOrderPayload {
+  order: OrderPayload;
+  cashierName: string;
+  timestamp: string;
+}
+
+export interface ShiftPayload {
+  id: string;
+  cashierId: string;
+  cashierName: string;
+  cashierCode?: string;
+  shiftStart: string;
+  shiftEnd: string;
+  totalSales: number;
+  totalOrders: number;
+  totalItems: number;
+  salesBreakdown: { id: string; items: { name: string; quantity: number; price: number }[]; total: number; date: string }[];
+  isRead: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -82,12 +127,14 @@ class SyncManager {
     });
 
     // ── Incoming events ────────────────────────────────────────────────
-    this.socket.on('menu_updated',      (d) => this._emit('menu_updated', d));
-    this.socket.on('mode_changed',      (d) => this._emit('mode_changed', d));
-    this.socket.on('cashier_online',    (d) => this._emit('cashier_online', d));
-    this.socket.on('cashier_offline',   (d) => this._emit('cashier_offline', d));
-    this.socket.on('assign_confirmed',  (d) => this._emit('assign_confirmed', d));
-    this.socket.on('registered',        (d) => this._emit('registered', d));
+    this.socket.on('menu_updated',       (d) => this._emit('menu_updated', d));
+    this.socket.on('mode_changed',       (d) => this._emit('mode_changed', d));
+    this.socket.on('cashier_online',     (d) => this._emit('cashier_online', d));
+    this.socket.on('cashier_offline',    (d) => this._emit('cashier_offline', d));
+    this.socket.on('cashier_status_list',(d) => this._emit('cashier_status_list', d));
+    this.socket.on('assign_confirmed',   (d) => this._emit('assign_confirmed', d));
+    this.socket.on('registered',         (d) => this._emit('registered', d));
+    this.socket.on('new_order',          (d) => this._emit('new_order', d));
   }
 
   disconnect() {
@@ -117,17 +164,14 @@ class SyncManager {
 
   // ── Emit menu changes to server (admin calls these) ────────────────────
 
-  /** Notify all devices: a menu item was added */
   menuItemAdded(item: Record<string, unknown>) {
     this.socket?.emit('menu_change', { action: 'add_item', item });
   }
 
-  /** Notify all devices: a menu item was updated */
   menuItemUpdated(item: Record<string, unknown>) {
     this.socket?.emit('menu_change', { action: 'edit_item', item });
   }
 
-  /** Notify all devices: a menu item was deleted */
   menuItemDeleted(itemId: string) {
     this.socket?.emit('menu_change', { action: 'delete_item', item: { id: itemId } });
   }
@@ -140,6 +184,36 @@ class SyncManager {
   /** Admin: switch cashier back to cashier mode */
   assignCashier(cashierId: string, cashierName: string) {
     this.socket?.emit('assign_cashier', { cashierId, cashierName });
+  }
+
+  // ── Cashier lifecycle events ───────────────────────────────────────────
+
+  /**
+   * Cashier clicked the Login button — notify admin they are online.
+   * Call this AFTER a successful login(), not on app open.
+   */
+  cashierLogin(cashierId: string, cashierName: string) {
+    this.socket?.emit('cashier_login', {
+      cashierId,
+      cashierName,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Cashier clicked End Shift — sends full shift report to admin.
+   * Call this when the cashier confirms the end-shift dialog.
+   */
+  cashierEndShift(shift: ShiftPayload) {
+    this.socket?.emit('cashier_end_shift', { shift });
+  }
+
+  /**
+   * Cashier completed a sale — notify admin in real-time.
+   * Call this right after addSale() in PaymentPage.
+   */
+  newOrder(order: OrderPayload) {
+    this.socket?.emit('new_order', { order });
   }
 }
 

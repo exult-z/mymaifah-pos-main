@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { syncManager } from '@/lib/sync';
 import { Logo } from '@/assets/logo';
 import { toast } from 'sonner';
 import { User, ArrowLeft, AlertCircle, LogIn } from 'lucide-react';
@@ -56,6 +57,10 @@ const LoginPage = () => {
     
     if (result.success && result.user) {
       toast.success(`Welcome back, ${result.user.fullName}!`);
+      // Notify admin the cashier is now online (only for cashier role)
+      if (result.user.role === 'cashier') {
+        syncManager.cashierLogin(result.user.id, result.user.fullName);
+      }
       // Navigation will happen in useEffect after state updates
     } else {
       setError(result.error || 'Invalid email or password');
